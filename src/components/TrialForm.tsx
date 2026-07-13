@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SITE_CONFIG } from "../config/site";
 import { FormStatusMessage } from "./FormStatusMessage";
 
@@ -44,6 +44,17 @@ export const TrialForm: React.FC = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [submitStatus, setSubmitStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    try {
+      const detectedZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (detectedZone) {
+        setFormData((prev) => ({ ...prev, timeZone: detectedZone }));
+      }
+    } catch (e) {
+      // Fallback
+    }
+  }, []);
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
@@ -461,10 +472,10 @@ export const TrialForm: React.FC = () => {
                 name="consent"
                 checked={formData.consent}
                 onChange={handleChange}
-                className="mt-1 w-4.5 h-4.5 accent-emerald-800 rounded text-emerald-900 focus:ring-emerald-700 focus:ring-2"
+                className="mt-1 w-4.5 h-4.5 accent-emerald-800 rounded text-emerald-900 focus:ring-emerald-700 focus:ring-2 cursor-pointer"
               />
-              <label htmlFor="consent" className="text-stone-600 text-xs leading-relaxed select-none">
-                I confirm that the information provided may be used by Tajweed Scholars to contact me, arrange trial classes, and recommend a suitable learning plan. <span className="text-emerald-700">*</span>
+              <label htmlFor="consent" className="text-stone-600 text-xs leading-relaxed select-none cursor-pointer">
+                I consent to receive class updates and scheduling text messages/emails from Tajweed Scholars. Message and data rates may apply. Reply STOP to opt out. <span className="text-emerald-700">*</span>
               </label>
             </div>
             {errors.consent && <p className="text-red-500 text-[11px] mt-1.5 font-medium">{errors.consent}</p>}

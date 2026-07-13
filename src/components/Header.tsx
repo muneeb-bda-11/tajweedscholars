@@ -12,6 +12,69 @@ export const Header: React.FC = () => {
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileToggleRef = useRef<HTMLButtonElement>(null);
+  const mobileCloseRef = useRef<HTMLButtonElement>(null);
+  const prevMobileMenuOpen = useRef(isMobileMenuOpen);
+
+  // Close dropdown and mobile menu on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMobileMenuOpen(false);
+        setIsDropdownOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Return focus to toggle button on mobile menu close
+  useEffect(() => {
+    if (prevMobileMenuOpen.current && !isMobileMenuOpen) {
+      mobileToggleRef.current?.focus();
+    }
+    prevMobileMenuOpen.current = isMobileMenuOpen;
+  }, [isMobileMenuOpen]);
+
+  // Focus the close button when mobile menu opens
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      setTimeout(() => {
+        mobileCloseRef.current?.focus();
+      }, 50);
+    }
+  }, [isMobileMenuOpen]);
+
+  // Focus trap for mobile menu
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleFocusTrap = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      if (!mobileMenuRef.current) return;
+      
+      const focusableElements = mobileMenuRef.current.querySelectorAll(
+        'a[href], button:not([disabled]), textarea, input, select'
+      );
+      if (focusableElements.length === 0) return;
+      
+      const firstElement = focusableElements[0] as HTMLElement;
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+      
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleFocusTrap);
+    return () => window.removeEventListener("keydown", handleFocusTrap);
+  }, [isMobileMenuOpen]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -204,6 +267,7 @@ export const Header: React.FC = () => {
             <div className="lg:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                ref={mobileToggleRef}
                 aria-expanded={isMobileMenuOpen}
                 aria-label="Toggle Navigation Menu"
                 id="mobile-menu-toggle"
@@ -245,6 +309,7 @@ export const Header: React.FC = () => {
                   <span className="font-display font-bold text-lg text-emerald-950">Menu</span>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
+                    ref={mobileCloseRef}
                     aria-label="Close menu"
                     id="mobile-menu-close"
                     className="p-1 text-stone-500 hover:text-emerald-800 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"

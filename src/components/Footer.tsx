@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "../lib/router";
-import { SITE_CONFIG, NAVIGATION_LINKS } from "../config/site";
+import { SITE_CONFIG, NAVIGATION_LINKS, HAS_WHATSAPP, HAS_CONTACT_EMAIL } from "../config/site";
 import { Icon } from "./Icon";
 
 export const Footer: React.FC = () => {
@@ -30,18 +30,22 @@ export const Footer: React.FC = () => {
             
             {/* Quick Contact Info */}
             <div className="space-y-2.5 pt-2 text-xs text-stone-500">
-              <div className="flex items-center gap-2.5">
-                <Icon name="MessageSquare" className="text-emerald-700 shrink-0" size={14} />
-                <a href={SITE_CONFIG.WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-stone-900 transition-colors">
-                  WhatsApp: {SITE_CONFIG.WHATSAPP_NUMBER}
-                </a>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Icon name="Mail" className="text-emerald-700 shrink-0" size={14} />
-                <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="hover:text-stone-900 transition-colors">
-                  Email: {SITE_CONFIG.CONTACT_EMAIL}
-                </a>
-              </div>
+              {HAS_WHATSAPP && (
+                <div className="flex items-center gap-2.5">
+                  <Icon name="MessageSquare" className="text-emerald-700 shrink-0" size={14} />
+                  <a href={SITE_CONFIG.WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-stone-900 transition-colors">
+                    WhatsApp: {SITE_CONFIG.WHATSAPP_NUMBER}
+                  </a>
+                </div>
+              )}
+              {HAS_CONTACT_EMAIL && (
+                <div className="flex items-center gap-2.5">
+                  <Icon name="Mail" className="text-emerald-700 shrink-0" size={14} />
+                  <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="hover:text-stone-900 transition-colors">
+                    Email: {SITE_CONFIG.CONTACT_EMAIL}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
@@ -96,20 +100,24 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Policies Column */}
-          <div>
-            <h4 className="text-stone-900 font-display font-semibold text-sm uppercase tracking-wider mb-5">
-              Policies
-            </h4>
-            <ul className="space-y-3 text-sm text-stone-500">
-              {NAVIGATION_LINKS.policies.map((link) => (
-                <li key={link.path}>
-                  <Link to={link.path} className="hover:text-emerald-800 transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {SITE_CONFIG.POLICY_PAGES_ENABLED ? (
+            <div>
+              <h4 className="text-stone-900 font-display font-semibold text-sm uppercase tracking-wider mb-5">
+                Policies
+              </h4>
+              <ul className="space-y-3 text-sm text-stone-500">
+                {NAVIGATION_LINKS.policies.map((link) => (
+                  <li key={link.path}>
+                    <Link to={link.path} className="hover:text-emerald-800 transition-colors">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="hidden lg:block" />
+          )}
 
         </div>
 
@@ -117,12 +125,8 @@ export const Footer: React.FC = () => {
         <div className="py-8 border-b border-stone-200/80 text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-stone-500 max-w-2xl leading-relaxed">
-              <strong>Core Pillars:</strong> Sanad/Ijazah-verified teachers · Live 1-to-1 classes · Regular progress updates · Serving students across the United States, United Kingdom, Canada, and Australia.
+              <strong>Core Pillars:</strong> Instructors hold teaching credentials and traditional permissions · Live 1-to-1 classes · Regular progress updates · Serving students across the United States, United Kingdom, Canada, and Australia.
             </p>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-800 font-semibold font-mono bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-800/10">
-              <Icon name="BadgeCheck" size={13} className="text-emerald-800" />
-              <span>Verified Academy</span>
-            </div>
           </div>
         </div>
 

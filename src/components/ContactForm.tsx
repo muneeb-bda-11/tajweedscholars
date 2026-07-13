@@ -9,6 +9,7 @@ interface ContactFormData {
   countryTimeZone: string;
   topic: string;
   message: string;
+  consent: boolean;
 }
 
 export const ContactForm: React.FC = () => {
@@ -18,7 +19,8 @@ export const ContactForm: React.FC = () => {
     whatsappNumber: "",
     countryTimeZone: "",
     topic: "Kids Quran Classes",
-    message: ""
+    message: "",
+    consent: false
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
@@ -45,14 +47,18 @@ export const ContactForm: React.FC = () => {
     } else if (formData.message.trim().length < 10) {
       newErrors.message = "Please write a more descriptive message (at least 10 characters)";
     }
+    if (!formData.consent) {
+      newErrors.consent = "You must consent to receive updates to submit this form";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    const val = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
+    setFormData((prev) => ({ ...prev, [name]: val }));
     if (errors[name as keyof ContactFormData]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -229,6 +235,25 @@ export const ContactForm: React.FC = () => {
               placeholder="How can we help you? Let us know your preferred study hours, multiple children booking, or specific questions."
             />
             {errors.message && <p className="text-red-500 text-[11px] mt-1 font-medium">{errors.message}</p>}
+          </div>
+
+          <div id="field-consent" className="space-y-1">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="consent"
+                name="consent"
+                checked={formData.consent}
+                onChange={handleChange}
+                className={`mt-1 h-4 w-4 rounded border-stone-300 text-emerald-800 focus:ring-emerald-700 ${
+                  errors.consent ? "border-red-400 focus:ring-red-400" : ""
+                }`}
+              />
+              <label htmlFor="consent" className="text-xs text-stone-600 leading-normal">
+                I consent to receive class updates and scheduling text messages/emails from Tajweed Scholars. Message and data rates may apply. Reply STOP to opt out. <span className="text-emerald-700">*</span>
+              </label>
+            </div>
+            {errors.consent && <p className="text-red-500 text-[11px] font-medium">{errors.consent}</p>}
           </div>
 
           <FormStatusMessage

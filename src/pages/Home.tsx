@@ -24,15 +24,15 @@ export const Home: React.FC = () => {
             <div className="lg:col-span-7 space-y-6 md:space-y-8 text-left">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-800/10 text-emerald-800 text-xs font-bold uppercase tracking-wider font-sans">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                Enrollment Open for Term 1
+                Live 1-to-1 Instruction
               </div>
 
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-black text-stone-900 tracking-tight leading-[1.08]">
                 Helping Every Muslim Build a <span className="text-amber-300 font-extrabold">Lifelong Connection</span> with the Quran
               </h1>
 
-              <p className="text-stone-600 text-base md:text-lg leading-relaxed max-w-2xl font-normal">
-                Live, one-to-one Quran classes for children and adults, taught by Sanad and Ijazah-certified teachers, with a structured curriculum, visible progress, and a teacher you can trust.
+              <p className="text-stone-600 text-base md:text-lg leading-relaxed max-w-2xl mx-auto font-normal">
+                Live, one-to-one Quran classes for children and adults, taught by credentialed instructors, with a structured curriculum, visible progress, and personalized schedules.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
@@ -63,12 +63,12 @@ export const Home: React.FC = () => {
                   <p className="text-stone-400 text-xs mt-0.5 font-medium">Private Instruction</p>
                 </div>
                 <div>
-                  <p className="font-display text-lg font-bold text-emerald-950">Verified</p>
-                  <p className="text-stone-400 text-xs mt-0.5 font-medium">Sanad/Ijazah</p>
+                  <p className="font-display text-lg font-bold text-emerald-950">Structured</p>
+                  <p className="text-stone-400 text-xs mt-0.5 font-medium">Clear Curricula</p>
                 </div>
                 <div>
-                  <p className="font-display text-lg font-bold text-emerald-950">0% Risk</p>
-                  <p className="text-stone-400 text-xs mt-0.5 font-medium">3 Free Trials</p>
+                  <p className="font-display text-lg font-bold text-emerald-950">No Card</p>
+                  <p className="text-stone-400 text-xs mt-0.5 font-medium">Required for Trial</p>
                 </div>
               </div>
             </div>
@@ -94,61 +94,69 @@ export const Home: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Simulated Teacher Card */}
-                <div className="bg-emerald-900 text-stone-100 rounded-2xl p-5 shadow-inner relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-800/60 rounded-full blur-xl" />
+                {/* Neutral Visual Teacher Card */}
+                <div className="bg-emerald-900 text-stone-100 rounded-2xl p-6 shadow-inner relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-800/60 rounded-full blur-xl animate-pulse" />
                   
                   <div className="flex items-center gap-4 relative z-10">
                     <div className="w-12 h-12 rounded-xl bg-emerald-850 border border-emerald-700 flex items-center justify-center text-amber-200 shadow">
-                      <Icon name="GraduationCap" size={24} />
+                      <Icon name="BookOpen" size={24} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono uppercase text-amber-300 font-bold tracking-wider">Instructor</span>
-                        <div className="px-1.5 py-0.5 bg-emerald-800 rounded text-[9px] text-emerald-300 font-bold uppercase border border-emerald-700">Ijazah Certified</div>
-                      </div>
-                      <h4 className="font-display font-bold text-base mt-0.5 text-stone-100">Sheikh Al-Azhari</h4>
+                      <span className="text-[10px] font-mono uppercase text-amber-300 font-bold tracking-wider">Custom Lesson</span>
+                      <h4 className="font-display font-bold text-lg text-stone-50">Live 1-to-1 Quran Class</h4>
                     </div>
                   </div>
 
-                  <div className="mt-4 p-3 bg-emerald-950/40 rounded-xl border border-emerald-800/40 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-stone-300">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                      <span>Live Audio Stream</span>
+                  {/* Core Features */}
+                  <div className="mt-6 space-y-3 relative z-10 text-stone-100 text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-emerald-800/80 flex items-center justify-center text-amber-300">
+                        <Icon name="Check" size={12} className="stroke-[3]" />
+                      </div>
+                      <span>Teacher guidance</span>
                     </div>
-                    <span className="font-mono text-[10px] text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded">96 kbps</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-emerald-800/80 flex items-center justify-center text-amber-300">
+                        <Icon name="Check" size={12} className="stroke-[3]" />
+                      </div>
+                      <span>Quran recitation practice</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-emerald-800/80 flex items-center justify-center text-amber-300">
+                        <Icon name="Check" size={12} className="stroke-[3]" />
+                      </div>
+                      <span>Live pronunciation correction</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-emerald-800/80 flex items-center justify-center text-amber-300">
+                        <Icon name="Check" size={12} className="stroke-[3]" />
+                      </div>
+                      <span>30-minute private session</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Simulated Lesson Progress Board */}
+                {/* Live Lesson Progress Indicator */}
                 <div className="bg-stone-100/80 rounded-2xl p-5 border border-stone-200/40 space-y-3.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-stone-700">Surah Al-Mulk Recitation</span>
-                    <span className="text-xs font-bold text-emerald-800 font-mono">Verse 1 - 5</span>
+                    <span className="text-xs font-bold text-stone-700">Recitation Practice</span>
+                    <span className="text-xs font-semibold text-emerald-800 font-mono">Live Interactive Mode</span>
                   </div>
 
-                  {/* Progress Line */}
+                  {/* Interactive Progress Line */}
                   <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
-                    <div className="bg-emerald-700 h-full w-2/3 rounded-full" />
+                    <div className="bg-emerald-700 h-full w-3/4 rounded-full" />
                   </div>
 
                   <div className="flex items-center gap-2.5 pt-1.5 border-t border-stone-200/50">
                     <div className="w-5 h-5 rounded bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                      <Icon name="Check" size={12} className="stroke-[3]" />
+                      <Icon name="Clock" size={12} />
                     </div>
                     <p className="text-stone-600 text-xs">
-                      <strong>Tajweed Focus:</strong> Perfecting Noon Sakinah rules.
+                      <strong>Lesson Pace:</strong> Fully adjusted to your personal speed.
                     </p>
                   </div>
-                </div>
-
-                {/* Quick info snippet */}
-                <div className="flex items-center justify-between p-3.5 bg-amber-50/60 border border-amber-200/50 rounded-2xl">
-                  <div className="flex items-center gap-2 text-amber-900">
-                    <Icon name="BadgeCheck" size={16} className="text-amber-700 shrink-0" />
-                    <span className="text-xs font-semibold">100% Verified Credentials</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-stone-400 font-semibold">Sanad #4489</span>
                 </div>
               </div>
             </div>

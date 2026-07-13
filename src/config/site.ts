@@ -7,22 +7,28 @@
 export const SITE_CONFIG = {
   name: "Tajweed Scholars",
   tagline: "Helping Every Muslim Build a Lifelong Connection with the Quran",
-  description: "Online Quran Academy for Kids & Adults offering live 1-to-1 classes with verified Sanad & Ijazah certified teachers.",
+  description: "Online Quran Academy for Kids & Adults offering live 1-to-1 classes with Sanad & Ijazah certified teachers.",
   
-  // Contact & Socials
-  WHATSAPP_NUMBER: "+1 (555) 872-5933", // Placeholder WhatsApp Number
-  CONTACT_EMAIL: "admissions@tajweedscholars.com", // Placeholder Email
-  WHATSAPP_LINK: "https://wa.me/15558725933", // WhatsApp direct URL
+  // Contact & Socials (Empty by default for launch safety)
+  WHATSAPP_NUMBER: "", 
+  CONTACT_EMAIL: "", 
+  WHATSAPP_LINK: "", 
   
   // App Setup
   DEMO_MODE: true, // When true, validates form but doesn't transmit data
-  SHOW_EXACT_PRICES: false, // Hidden by default (displays "Plans from $40/month")
+  SHOW_EXACT_PRICES: false, // Hidden completely per guidelines
   FORM_ENDPOINT: "", // Secure POST endpoint for form submissions
+  POLICY_PAGES_ENABLED: false, // Disabled by default
   
   // Metadata & Countries Served
   countriesServed: ["United States", "United Kingdom", "Canada", "Australia"],
   timeZoneInfo: "Class timings are confirmed in each student's local time zone."
 };
+
+// Explicit visibility helper flags derived from config
+export const HAS_WHATSAPP = !!SITE_CONFIG.WHATSAPP_NUMBER && !!SITE_CONFIG.WHATSAPP_LINK;
+export const HAS_CONTACT_EMAIL = !!SITE_CONFIG.CONTACT_EMAIL;
+export const HAS_FORM_ENDPOINT = !!SITE_CONFIG.FORM_ENDPOINT;
 
 export interface Program {
   id: string;
@@ -41,10 +47,10 @@ export const PROGRAMS: Program[] = [
     shortDescription: "For children ages 4–15, from their first Arabic letters to confident Quran recitation.",
     fullDescription: "Designed specifically for young minds, this program keeps children engaged, motivated, and excited about learning. We cover the basic Arabic letters (Qaida), standard pronunciation, visual recognition, and gradual transition into reciting the Quran with beautiful Tajweed, tailored to each child's learning pace.",
     icon: "Baby",
-    path: "/programs/kids-classes",
+    path: "/kids-quran-classes",
     highlights: [
       "Fun, interactive 1-to-1 teaching style",
-      "Gamified progress trackers & positive reinforcement",
+      "Age-appropriate activities and positive encouragement",
       "Patient, certified teachers trained to keep kids engaged",
       "Flexible timings fitting school & family routines"
     ]
@@ -55,12 +61,12 @@ export const PROGRAMS: Program[] = [
     shortDescription: "Private, judgment-free Quran and Tajweed learning for adults at every starting level.",
     fullDescription: "It is never too late to refine your recitation or start from the beginning. Our adult classes provide a supportive, completely judgment-free private environment. Whether you are learning to read for the first time or polishing your pronunciation, your teacher adapts to your busy schedule and individual goals.",
     icon: "GraduationCap",
-    path: "/programs/adult-classes",
+    path: "/adult-quran-classes",
     highlights: [
       "100% private, highly supportive 1-to-1 setting",
       "Flexible scheduling for professionals and parents",
       "Tailored focus: from basic reading to advanced recitation",
-      "Both male and female certified teachers available"
+      "Teacher gender preferences are considered where relevant, subject to availability and schedule compatibility."
     ]
   },
   {
@@ -69,7 +75,7 @@ export const PROGRAMS: Program[] = [
     shortDescription: "Systematic Makharij, Sifaat, rules, correction, and advanced recitation development.",
     fullDescription: "Master the rules of Tajweed systematically. Learn the correct articulation points of letters (Makharij), their essential characteristics (Sifaat), rules of Noon and Meem Sakinah, Mudood (elongations), and apply them directly to your recitation. This course transitions you from reading to reciting with precision.",
     icon: "BookOpen",
-    path: "/programs/tajweed-course",
+    path: "/tajweed-course",
     highlights: [
       "In-depth analysis of articulation points (Makharij)",
       "Practical application of Tajweed rules on Quranic passages",
@@ -81,23 +87,23 @@ export const PROGRAMS: Program[] = [
     id: "hifz-program",
     title: "Hifz Program",
     shortDescription: "Structured Quran memorization using Sabaq, Sabqi, and Manzil.",
-    fullDescription: "A structured approach to memorizing the Book of Allah. Our teachers use the proven three-pillar system of memorization: Sabaq (newly memorized portion), Sabqi (recent revision), and Manzil (old revision). This ensures your memorization is rock-solid and preserved long-term.",
+    fullDescription: "A structured approach to memorizing the Book of Allah. Our teachers use the proven three-pillar system of memorization: Sabaq (newly memorized portion), Sabqi (recent revision), and Manzil (old revision). This ensures your memorization is designed to strengthen long-term retention through regular revision.",
     icon: "Bookmark",
-    path: "/programs/hifz-program",
+    path: "/hifz-program",
     highlights: [
       "Daily structured memorization plans (Sabaq)",
       "Rigorous systematic revision cycle (Sabqi & Manzil)",
-      "Focus on maintaining perfect Tajweed while memorizing",
-      "Monthly retention assessments and progress reports"
+      "Focus on maintaining accurate Tajweed and careful recitation.",
+      "Regular memorization and revision reviews"
     ]
   },
   {
     id: "arabic-language",
     title: "Arabic Language",
     shortDescription: "Arabic learning through consultation-based placement during Phase 1.",
-    fullDescription: "Learn to read, understand, and communicate in classical Quranic Arabic or Modern Standard Arabic. During this initial phase, placement and syllabus planning are customized through a personal consultation class with our academic team to fit your specific objectives.",
+    fullDescription: "Phase 1 enrollment for Arabic language classes is entirely consultation-based, and class placement is confirmed individually. Learn to read, understand, and communicate in classical Quranic Arabic or Modern Standard Arabic. Syllabus planning is customized through a personal consultation class with our academic team to fit your specific objectives.",
     icon: "Languages",
-    path: "/programs/arabic-language",
+    path: "/arabic-language",
     highlights: [
       "Custom-tailored vocabulary and grammar focus",
       "Understanding Quranic vocabulary & sentence structures",
@@ -109,9 +115,9 @@ export const PROGRAMS: Program[] = [
     id: "islamic-studies",
     title: "Islamic Studies",
     shortDescription: "Initially available as an add-on alongside eligible Quran programs.",
-    fullDescription: "Equip yourself or your children with essential Islamic knowledge. This comprehensive program covers basic Aqeedah (belief), Fiqh of daily worship, Seerah (prophetic biography), Islamic history, and daily Adhkar (supplications), integrated seamlessly into your standard Quran schedule.",
+    fullDescription: "Islamic Studies is initially available as an add-on alongside eligible Quran programs, rather than as a standalone comprehensive program. Equip yourself or your children with essential Islamic knowledge, covering basic Aqeedah (belief), Fiqh of daily worship, Seerah (prophetic biography), Islamic history, and daily Adhkar (supplications), integrated seamlessly into your standard Quran schedule.",
     icon: "HeartHandshake",
-    path: "/programs/islamic-studies",
+    path: "/islamic-studies",
     highlights: [
       "Age-appropriate curricula for kids and adults",
       "Covers daily Adhkar, basic Fiqh, and Islamic manners (Akhlaq)",
@@ -128,8 +134,8 @@ export interface TrustPoint {
 
 export const TRUST_STRIP: TrustPoint[] = [
   {
-    title: "Verified Sanad & Ijazah Teachers",
-    description: "Every instructor holds authenticated teaching credentials before working with students."
+    title: "Sanad & Ijazah Instructors",
+    description: "Instructors hold certified credentials and traditional permissions."
   },
   {
     title: "Live, Private 1-to-1 Sessions",
@@ -141,7 +147,7 @@ export const TRUST_STRIP: TrustPoint[] = [
   },
   {
     title: "Regular Feedback & Updates",
-    description: "Detailed homework logs, attendance tracking, and transparent progress reports."
+    description: "Regular attendance notes, homework updates, teacher feedback, and progress updates."
   }
 ];
 
@@ -395,21 +401,21 @@ export const NAVIGATION_LINKS = {
     { label: "Contact", path: "/contact" }
   ],
   programs: [
-    { label: "Kids Quran Classes", path: "/programs/kids-classes" },
-    { label: "Adult Quran Classes", path: "/programs/adult-classes" },
-    { label: "Tajweed Course", path: "/programs/tajweed-course" },
-    { label: "Hifz Program", path: "/programs/hifz-program" },
-    { label: "Arabic Language", path: "/programs/arabic-language" },
-    { label: "Islamic Studies", path: "/programs/islamic-studies" }
+    { label: "Kids Quran Classes", path: "/kids-quran-classes" },
+    { label: "Adult Quran Classes", path: "/adult-quran-classes" },
+    { label: "Tajweed Course", path: "/tajweed-course" },
+    { label: "Hifz Program", path: "/hifz-program" },
+    { label: "Arabic Language", path: "/arabic-language" },
+    { label: "Islamic Studies", path: "/islamic-studies" }
   ],
   otherPlaceholders: [
     { label: "Why Choose Us", path: "/why-choose-us" }
   ],
   policies: [
-    { label: "Privacy Policy", path: "/policies/privacy-policy" },
-    { label: "Terms and Conditions", path: "/policies/terms-and-conditions" },
-    { label: "Payment Policy", path: "/policies/payment-policy" },
-    { label: "Refund Policy", path: "/policies/refund-policy" },
-    { label: "Reschedule Policy", path: "/policies/reschedule-policy" }
+    { label: "Privacy Policy", path: "/privacy-policy" },
+    { label: "Terms and Conditions", path: "/terms-and-conditions" },
+    { label: "Payment Policy", path: "/payment-policy" },
+    { label: "Refund Policy", path: "/refund-policy" },
+    { label: "Reschedule Policy", path: "/reschedule-policy" }
   ]
 };

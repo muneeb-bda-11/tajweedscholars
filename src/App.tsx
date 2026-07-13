@@ -29,23 +29,23 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
 
           {/* Programs Placeholders */}
-          <Route path="/programs/kids-classes" element={<PlaceholderPage />} />
-          <Route path="/programs/adult-classes" element={<PlaceholderPage />} />
-          <Route path="/programs/tajweed-course" element={<PlaceholderPage />} />
-          <Route path="/programs/hifz-program" element={<PlaceholderPage />} />
-          <Route path="/programs/arabic-language" element={<PlaceholderPage />} />
-          <Route path="/programs/islamic-studies" element={<PlaceholderPage />} />
+          <Route path="/kids-quran-classes" element={<PlaceholderPage />} />
+          <Route path="/adult-quran-classes" element={<PlaceholderPage />} />
+          <Route path="/tajweed-course" element={<PlaceholderPage />} />
+          <Route path="/hifz-program" element={<PlaceholderPage />} />
+          <Route path="/arabic-language" element={<PlaceholderPage />} />
+          <Route path="/islamic-studies" element={<PlaceholderPage />} />
 
           {/* Company & Support Placeholders */}
           <Route path="/about" element={<PlaceholderPage />} />
           <Route path="/why-choose-us" element={<PlaceholderPage />} />
 
           {/* Policies Placeholders */}
-          <Route path="/policies/privacy-policy" element={<PlaceholderPage />} />
-          <Route path="/policies/terms-and-conditions" element={<PlaceholderPage />} />
-          <Route path="/policies/payment-policy" element={<PlaceholderPage />} />
-          <Route path="/policies/refund-policy" element={<PlaceholderPage />} />
-          <Route path="/policies/reschedule-policy" element={<PlaceholderPage />} />
+          <Route path="/privacy-policy" element={<PlaceholderPage />} />
+          <Route path="/terms-and-conditions" element={<PlaceholderPage />} />
+          <Route path="/payment-policy" element={<PlaceholderPage />} />
+          <Route path="/refund-policy" element={<PlaceholderPage />} />
+          <Route path="/reschedule-policy" element={<PlaceholderPage />} />
         </main>
 
         {/* Global Informative Academy Footer */}
