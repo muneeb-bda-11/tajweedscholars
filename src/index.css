@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..900;1,300..900&family=Space+Grotesk:wght@300..700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Sleek modern Inter typography pairing across both body and displays */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", "Space Grotesk", sans-serif;
+
+  /* Sleek Interface premium color tokens */
+  --color-emerald-50: #f0fdf4;       /* --sage */
+  --color-emerald-100: #dcfce7;
+  --color-emerald-150: #bbf7d0;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #064e3b;      /* --emerald */
+  --color-emerald-850: #033c2e;
+  --color-emerald-900: #022c22;
+  --color-emerald-950: #011c15;
+  
+  --color-amber-50: #fdfbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #d4af37;        /* --gold */
+  --color-amber-400: #b45309;
+  
+  --color-stone-50: #fdfcf9;         /* --ivory */
+  --color-stone-100: #f3f4f6;        /* clean grey for subtle backgrounds */
+  --color-stone-200: #e5e7eb;        /* sleek hairline borders */
+  --color-stone-300: #d1d5db;
+  
+  --color-stone-800: #1f2937;        /* --charcoal */
+  --color-stone-850: #111827;        /* deeper dark neutral */
+}
+
+/* Custom geometric pattern class from Sleek theme */
+.geometric-pattern {
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  opacity: 0.08;
+  background-image: radial-gradient(#064e3b 1.2px, transparent 0);
+  background-size: 20px 20px;
+}
+
+/* Custom visual styles and animations */
+@layer base {
+  body {
+    @apply bg-stone-50 text-stone-800 selection:bg-emerald-800 selection:text-stone-50 font-sans antialiased scroll-smooth;
+  }
+}
+
+/* Custom focus states to ensure WCAG keyboard accessibility */
+*:focus-visible {
+  @apply outline-none ring-2 ring-emerald-700 ring-offset-2;
+}
+
+/* Support reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom Active Link highlighters */
+.active-route {
+  @apply !text-emerald-800 !font-bold !border-b-2 !border-emerald-800;
+}
+
+#header-cta-button, #mobile-menu-cta-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
