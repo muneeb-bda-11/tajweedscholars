@@ -9,10 +9,11 @@ export const SITE_CONFIG = {
   tagline: "Helping Every Muslim Build a Lifelong Connection with the Quran",
   description: "Online Quran Academy for Kids & Adults offering live 1-to-1 classes with Sanad & Ijazah certified teachers.",
   
-  // Contact & Socials (Empty by default for launch safety)
-  WHATSAPP_NUMBER: "", 
-  CONTACT_EMAIL: "", 
-  WHATSAPP_LINK: "", 
+  // Contact & Socials
+  WHATSAPP_NUMBER: "+923246608501",
+  CONTACT_EMAIL: "tajweedscholar@gmail.com",
+  WHATSAPP_LINK: "https://wa.me/923246608501",
+  SOCIAL_LINKS: { instagram: "", facebook: "", youtube: "", tiktok: "", linkedin: "" },
   
   // App Setup
   DEMO_MODE: true, // When true, validates form but doesn't transmit data

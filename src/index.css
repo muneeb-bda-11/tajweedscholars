@@ -1,73 +1,215 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..900;1,300..900&family=Space+Grotesk:wght@300..700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap");
 @import "tailwindcss";
 
+:root {
+  --color-primary: #277f68;
+  --color-secondary: #ae8f6d;
+  --color-background: #faf8f5;
+  --color-surface: #ffffff;
+  --color-text: #1f2937;
+  --color-border: #e5e7eb;
+}
+
 @theme {
-  /* Sleek modern Inter typography pairing across both body and displays */
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-display: "Inter", "Space Grotesk", sans-serif;
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Segoe UI", sans-serif;
 
-  /* Sleek Interface premium color tokens */
-  --color-emerald-50: #f0fdf4;       /* --sage */
-  --color-emerald-100: #dcfce7;
-  --color-emerald-150: #bbf7d0;
-  --color-emerald-700: #047857;
-  --color-emerald-800: #064e3b;      /* --emerald */
-  --color-emerald-850: #033c2e;
-  --color-emerald-900: #022c22;
-  --color-emerald-950: #011c15;
-  
-  --color-amber-50: #fdfbeb;
-  --color-amber-100: #fef3c7;
-  --color-amber-200: #fde68a;
-  --color-amber-300: #d4af37;        /* --gold */
-  --color-amber-400: #b45309;
-  
-  --color-stone-50: #fdfcf9;         /* --ivory */
-  --color-stone-100: #f3f4f6;        /* clean grey for subtle backgrounds */
-  --color-stone-200: #e5e7eb;        /* sleek hairline borders */
-  --color-stone-300: #d1d5db;
-  
-  --color-stone-800: #1f2937;        /* --charcoal */
-  --color-stone-850: #111827;        /* deeper dark neutral */
+  --color-emerald-50: #edf6f3;
+  --color-emerald-100: #dcece7;
+  --color-emerald-150: #cbe3dc;
+  --color-emerald-600: #318b73;
+  --color-emerald-700: #277f68;
+  --color-emerald-800: #277f68;
+  --color-emerald-850: #236f5c;
+  --color-emerald-900: #206452;
+  --color-emerald-950: #1f2937;
+
+  --color-amber-50: #f7f3ef;
+  --color-amber-100: #eee7df;
+  --color-amber-200: #ded0c0;
+  --color-amber-300: #ae8f6d;
+  --color-amber-400: #ae8f6d;
+  --color-amber-800: #765f48;
+
+  --color-stone-50: #faf8f5;
+  --color-stone-100: #f5f2ee;
+  --color-stone-200: #e5e7eb;
+  --color-stone-300: #d2cabd;
+  --color-stone-400: #8d867b;
+  --color-stone-500: #6f6a62;
+  --color-stone-600: #57534d;
+  --color-stone-700: #413e39;
+  --color-stone-800: #1f2937;
+  --color-stone-850: #24231f;
+  --color-stone-900: #1d1c19;
+  --color-stone-950: #151411;
 }
 
-/* Custom geometric pattern class from Sleek theme */
-.geometric-pattern {
-  position: absolute;
-  width: 150%;
-  height: 150%;
-  opacity: 0.08;
-  background-image: radial-gradient(#064e3b 1.2px, transparent 0);
-  background-size: 20px 20px;
-}
-
-/* Custom visual styles and animations */
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-stone-50 text-stone-800 selection:bg-emerald-800 selection:text-stone-50 font-sans antialiased scroll-smooth;
+    @apply bg-stone-50 text-stone-800 font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  }
+
+  [lang="ar"] {
+    font-family: "Noto Naskh Arabic", serif;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Custom focus states to ensure WCAG keyboard accessibility */
-*:focus-visible {
-  @apply outline-none ring-2 ring-emerald-700 ring-offset-2;
+.scholarly-pattern { background: #edf6f3; }
+
+.geometric-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  background-image: radial-gradient(#277f68 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
-/* Support reduced-motion preferences */
+@keyframes lesson-highlight-in {
+  0%, 18% { transform: scaleX(0); transform-origin: right; opacity: 0; }
+  32%, 82% { transform: scaleX(1); transform-origin: right; opacity: 1; }
+  100% { transform: scaleX(0); transform-origin: left; opacity: 0; }
+}
+
+@keyframes lesson-wave-pulse {
+  0%, 100% { transform: scaleY(0.55); opacity: 0.55; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes lesson-check-in {
+  0%, 38% { transform: scale(0.5); opacity: 0; }
+  48%, 100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes trial-autoplay-fill {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes confidence-underline-in {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.confidence-underline {
+  position: relative;
+  display: inline-block;
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  font-weight: 800;
+}
+
+.confidence-underline::after {
+  content: "";
+  position: absolute;
+  left: 2%;
+  right: 1%;
+  bottom: -0.06em;
+  height: 0.1em;
+  border-radius: 999px 45% 999px 35%;
+  background: #ae8f6d;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: confidence-underline-in 700ms 260ms ease-out forwards;
+}
+
+@keyframes lesson-photo-fade {
+  from { opacity: 0.72; }
+  to { opacity: 1; }
+}
+
+.lesson-photo-in {
+  animation: lesson-photo-fade 280ms ease-out;
+}
+
+.trial-autoplay-progress {
+  animation: trial-autoplay-fill 6s linear forwards;
+}
+
+.trial-autoplay-progress.is-paused {
+  animation-play-state: paused;
+}
+
+.lesson-highlight {
+  animation: lesson-highlight-in 5.5s ease-in-out infinite;
+}
+
+.lesson-wave {
+  animation: lesson-wave-pulse 1.8s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+.lesson-check {
+  animation: lesson-check-in 4.5s ease-out infinite;
+}
+
+.journey-route {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.6s ease;
+}
+
+.journey-route.is-visible {
+  stroke-dashoffset: 0;
+}
+
+.mobile-trial-bar {
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+*:focus-visible {
+  @apply outline-none ring-2 ring-emerald-700 ring-offset-2 ring-offset-stone-50;
+}
+
+.active-route {
+  @apply !text-emerald-800;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  * {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
-}
 
-/* Custom Active Link highlighters */
-.active-route {
-  @apply !text-emerald-800 !font-bold !border-b-2 !border-emerald-800;
-}
+  .lesson-highlight,
+  .lesson-wave,
+  .lesson-check {
+    animation: none !important;
+  }
 
-#header-cta-button, #mobile-menu-cta-button {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  .lesson-highlight {
+    opacity: 1;
+    transform: none;
+  }
+
+  .journey-route {
+    stroke-dashoffset: 0;
+  }
+
+  .confidence-underline::after {
+    animation: none;
+    transform: scaleX(1);
+  }
 }

@@ -26,7 +26,21 @@ import {
   AlertCircle,
   CheckCircle2,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  AudioLines,
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  RefreshCw,
+  ClipboardList,
+  UserCheck,
+  Route,
+  Instagram,
+  Facebook,
+  Youtube,
+  Music2,
+  Linkedin
 } from "lucide-react";
 
 const iconMap = {
@@ -56,7 +70,21 @@ const iconMap = {
   AlertCircle,
   CheckCircle2,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  AudioLines,
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  RefreshCw,
+  ClipboardList,
+  UserCheck,
+  Route,
+  Instagram,
+  Facebook,
+  Youtube,
+  Music2,
+  Linkedin
 };
 
 export type IconName = keyof typeof iconMap;
