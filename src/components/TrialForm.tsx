@@ -56,6 +56,29 @@ export const TrialForm: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const query = window.location.hash.split("?")[1];
+    if (!query) return;
+
+    const params = new URLSearchParams(query);
+    const allowedPrograms = ["Kids Quran Classes", "Adult Quran Classes", "Tajweed Course", "Hifz Program"];
+    const allowedLevels = ["Complete beginner", "Learning Arabic letters", "Reading Qaida", "Reading Quran", "Memorizing Quran", "Tajweed correction needed", "Tajweed learner", "Already memorizing", "Not sure"];
+    const allowedAgeGroups = ["4–5", "6–8", "9–12", "13–15"];
+    const allowedGoals = ["Learn from the beginning", "Improve Quran reading", "Improve Tajweed", "Memorize Quran", "Tajweed correction", "Hifz", "Both"];
+    const program = params.get("recommendedProgram");
+    const currentLevel = params.get("currentLevel");
+    const ageGroup = params.get("ageGroup");
+    const goal = params.get("goal");
+
+    setFormData((previous) => ({
+      ...previous,
+      program: program && allowedPrograms.includes(program) ? program : previous.program,
+      currentLevel: currentLevel && allowedLevels.includes(currentLevel) ? currentLevel : previous.currentLevel,
+      studentAge: ageGroup && allowedAgeGroups.includes(ageGroup) ? ageGroup : previous.studentAge,
+      additionalNotes: goal && allowedGoals.includes(goal) ? `Learning goal: ${goal}` : previous.additionalNotes
+    }));
+  }, []);
+
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
@@ -365,6 +388,8 @@ export const TrialForm: React.FC = () => {
                   <option value="Reading Quran">Reading Quran</option>
                   <option value="Tajweed correction needed">Tajweed correction needed</option>
                   <option value="Memorizing Quran">Memorizing Quran</option>
+                  <option value="Tajweed learner">Tajweed learner</option>
+                  <option value="Already memorizing">Already memorizing</option>
                   <option value="Not sure">Not sure</option>
                 </select>
               </div>

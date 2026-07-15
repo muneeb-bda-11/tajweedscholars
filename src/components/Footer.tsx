@@ -1,143 +1,71 @@
 import React from "react";
+import { SITE_CONFIG } from "../config/site";
 import { Link } from "../lib/router";
-import { SITE_CONFIG, NAVIGATION_LINKS, HAS_WHATSAPP, HAS_CONTACT_EMAIL } from "../config/site";
 import { Icon } from "./Icon";
+
+const corePrograms = [
+  { label: "Kids Classes", path: "/kids-quran-classes" },
+  { label: "Adult Classes", path: "/adult-quran-classes" },
+  { label: "Tajweed", path: "/tajweed-course" },
+  { label: "Hifz", path: "/hifz-program" }
+];
+
+const academyLinks = [
+  { label: "About", path: "/about" },
+  { label: "Pricing", path: "/pricing" },
+  { label: "Free Trial", path: "/free-trial" },
+  { label: "Contact", path: "/contact" }
+];
+
+const socialLinks = [
+  { key: "instagram", label: "Instagram", icon: "Instagram" },
+  { key: "facebook", label: "Facebook", icon: "Facebook" },
+  { key: "youtube", label: "YouTube", icon: "Youtube" },
+  { key: "tiktok", label: "TikTok", icon: "Music2" },
+  { key: "linkedin", label: "LinkedIn", icon: "Linkedin" }
+] as const;
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
+  const configuredSocials = socialLinks.filter((social) => SITE_CONFIG.SOCIAL_LINKS[social.key]);
 
   return (
-    <footer className="bg-white text-stone-600 border-t border-stone-200/80 pt-16 pb-12" id="app-footer">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Main Columns Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-12 border-b border-stone-200/80">
-          
-          {/* Logo & Tagline Column */}
-          <div className="lg:col-span-2 space-y-5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-800 flex items-center justify-center text-stone-50 shadow-sm">
-                <Icon name="BookOpen" className="text-stone-50" size={18} />
-              </div>
-              <span className="font-display text-lg font-bold tracking-tight text-stone-900">
-                {SITE_CONFIG.name}
-              </span>
+    <footer id="app-footer" className="border-t border-emerald-700 bg-emerald-800 text-white/90">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="grid gap-6 border-b border-white/20 pb-6 sm:grid-cols-2 lg:grid-cols-12 lg:gap-10">
+          <div className="lg:col-span-5">
+            <img
+              src="/brand/logo-horizontal-white.svg"
+              alt="Tajweed Scholars"
+              width="1600"
+              height="400"
+              className="h-auto w-[185px] object-contain sm:w-[195px] lg:w-[240px]"
+            />
+            <p className="mt-2 max-w-sm text-sm leading-6 text-white/90">Live, private one-to-one Quran classes for children and adults.</p>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+              <a href={SITE_CONFIG.WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" aria-label="Contact Tajweed Scholars on WhatsApp at +92 324 660 8501" className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold hover:text-white"><Icon name="MessageSquare" size={16} />WhatsApp <span className="text-white/75">+92 324 660 8501</span></a>
+              <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} aria-label={`Email Tajweed Scholars at ${SITE_CONFIG.CONTACT_EMAIL}`} className="inline-flex min-h-10 min-w-0 items-center gap-2 text-sm font-semibold hover:text-white"><Icon name="Mail" size={16} /><span className="sm:hidden">Email us</span><span className="hidden break-all sm:inline">{SITE_CONFIG.CONTACT_EMAIL}</span></a>
             </div>
-            
-            <p className="text-stone-500 text-sm leading-relaxed max-w-sm">
-              {SITE_CONFIG.tagline}. Live, private 1-to-1 Quran instruction rooted in verified educational traditions.
-            </p>
-            
-            {/* Quick Contact Info */}
-            <div className="space-y-2.5 pt-2 text-xs text-stone-500">
-              {HAS_WHATSAPP && (
-                <div className="flex items-center gap-2.5">
-                  <Icon name="MessageSquare" className="text-emerald-700 shrink-0" size={14} />
-                  <a href={SITE_CONFIG.WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-stone-900 transition-colors">
-                    WhatsApp: {SITE_CONFIG.WHATSAPP_NUMBER}
-                  </a>
-                </div>
-              )}
-              {HAS_CONTACT_EMAIL && (
-                <div className="flex items-center gap-2.5">
-                  <Icon name="Mail" className="text-emerald-700 shrink-0" size={14} />
-                  <a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="hover:text-stone-900 transition-colors">
-                    Email: {SITE_CONFIG.CONTACT_EMAIL}
-                  </a>
-                </div>
-              )}
-            </div>
+            {configuredSocials.length > 0 && <div className="mt-2 flex gap-1" aria-label="Tajweed Scholars social media">{configuredSocials.map((social) => <a key={social.key} href={SITE_CONFIG.SOCIAL_LINKS[social.key]} target="_blank" rel="noopener noreferrer" aria-label={`Follow Tajweed Scholars on ${social.label}`} className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white"><Icon name={social.icon} size={17} /></a>)}</div>}
           </div>
 
-          {/* Programs Column */}
-          <div>
-            <h4 className="text-stone-900 font-display font-semibold text-sm uppercase tracking-wider mb-5">
-              Programs
-            </h4>
-            <ul className="space-y-3 text-sm text-stone-500">
-              {NAVIGATION_LINKS.programs.map((link) => (
-                <li key={link.path}>
-                  <Link to={link.path} className="hover:text-emerald-800 transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company Column */}
-          <div>
-            <h4 className="text-stone-900 font-display font-semibold text-sm uppercase tracking-wider mb-5">
-              Academy
-            </h4>
-            <ul className="space-y-3 text-sm text-stone-500">
-              <li>
-                <Link to="/about" className="hover:text-emerald-800 transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/why-choose-us" className="hover:text-emerald-800 transition-colors">
-                  Why Choose Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="hover:text-emerald-800 transition-colors">
-                  Pricing Plans
-                </Link>
-              </li>
-              <li>
-                <Link to="/free-trial" className="hover:text-emerald-800 transition-colors">
-                  Book Free Trial
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="hover:text-emerald-800 transition-colors">
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Policies Column */}
-          {SITE_CONFIG.POLICY_PAGES_ENABLED ? (
+          <div className="grid grid-cols-2 gap-6 lg:col-span-7">
             <div>
-              <h4 className="text-stone-900 font-display font-semibold text-sm uppercase tracking-wider mb-5">
-                Policies
-              </h4>
-              <ul className="space-y-3 text-sm text-stone-500">
-                {NAVIGATION_LINKS.policies.map((link) => (
-                  <li key={link.path}>
-                    <Link to={link.path} className="hover:text-emerald-800 transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+              <h2 className="text-xs font-bold text-white">Programs</h2>
+              <ul className="mt-2 grid grid-cols-1">
+                {corePrograms.map((program) => <li key={program.path}><Link to={program.path} className="flex min-h-9 items-center text-sm hover:text-white sm:min-h-10 sm:text-[15px]">{program.label}</Link></li>)}
               </ul>
             </div>
-          ) : (
-            <div className="hidden lg:block" />
-          )}
-
-        </div>
-
-        {/* Trust strip details & Compliance Disclaimer */}
-        <div className="py-8 border-b border-stone-200/80 text-center md:text-left">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-stone-500 max-w-2xl leading-relaxed">
-              <strong>Core Pillars:</strong> Instructors hold teaching credentials and traditional permissions · Live 1-to-1 classes · Regular progress updates · Serving students across the United States, United Kingdom, Canada, and Australia.
-            </p>
+            <div>
+              <h2 className="text-xs font-bold text-white">Academy</h2>
+              <ul className="mt-2 grid grid-cols-1">
+                {academyLinks.map((link) => <li key={link.path}><Link to={link.path} className="flex min-h-9 items-center text-sm hover:text-white sm:min-h-10 sm:text-[15px]">{link.label}</Link></li>)}
+              </ul>
+            </div>
           </div>
         </div>
 
-        {/* Bottom copyright & safe transactional statement */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-400">
-          <p>© {currentYear} {SITE_CONFIG.name}. All rights reserved.</p>
-          <p className="text-stone-400 max-w-sm sm:text-right leading-normal">
-            Admissions and lesson assignments are conducted directly with parents. No checkout, online payment portals, or card input forms are published here. Payment arrangements are sent exclusively through verified coordinators.
-          </p>
-        </div>
-
+        <p className="pt-4 text-xs text-white/85">© {currentYear} {SITE_CONFIG.name}. All rights reserved.</p>
       </div>
     </footer>
   );

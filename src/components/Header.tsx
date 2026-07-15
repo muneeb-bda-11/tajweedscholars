@@ -1,391 +1,214 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "../lib/router";
-import { SITE_CONFIG, NAVIGATION_LINKS } from "../config/site";
+import { NAVIGATION_LINKS } from "../config/site";
 import { Icon } from "./Icon";
-import { motion, AnimatePresence } from "motion/react";
 
 export const Header: React.FC = () => {
   const { path, navigate } = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const mobileToggleRef = useRef<HTMLButtonElement>(null);
-  const mobileCloseRef = useRef<HTMLButtonElement>(null);
-  const prevMobileMenuOpen = useRef(isMobileMenuOpen);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
 
-  // Close dropdown and mobile menu on Escape key press
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setIsMobileMenuOpen(false);
-        setIsDropdownOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const onScroll = () => setIsScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Return focus to toggle button on mobile menu close
   useEffect(() => {
-    if (prevMobileMenuOpen.current && !isMobileMenuOpen) {
-      mobileToggleRef.current?.focus();
-    }
-    prevMobileMenuOpen.current = isMobileMenuOpen;
-  }, [isMobileMenuOpen]);
-
-  // Focus the close button when mobile menu opens
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      setTimeout(() => {
-        mobileCloseRef.current?.focus();
-      }, 50);
-    }
-  }, [isMobileMenuOpen]);
-
-  // Focus trap for mobile menu
-  useEffect(() => {
-    if (!isMobileMenuOpen) return;
-    const handleFocusTrap = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      if (!mobileMenuRef.current) return;
-      
-      const focusableElements = mobileMenuRef.current.querySelectorAll(
-        'a[href], button:not([disabled]), textarea, input, select'
-      );
-      if (focusableElements.length === 0) return;
-      
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-      
-      if (e.shiftKey) {
-        if (document.activeElement === firstElement) {
-          lastElement.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          firstElement.focus();
-          e.preventDefault();
-        }
-      }
-    };
-    window.addEventListener("keydown", handleFocusTrap);
-    return () => window.removeEventListener("keydown", handleFocusTrap);
-  }, [isMobileMenuOpen]);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
+    const onPointerDown = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
 
-  // Track scroll position for styling changes
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
+    if (!isMobileMenuOpen) {
+      document.body.style.overflow = "";
+      if (wasOpen.current) toggleRef.current?.focus();
+      wasOpen.current = false;
+      return;
+    }
+
+    wasOpen.current = true;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !menuRef.current) return;
+      const items = menuRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
-  // Close mobile menu on path changes
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
+
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
   }, [path]);
 
-  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setIsDropdownOpen(!isDropdownOpen);
-    } else if (e.key === "Escape") {
-      setIsDropdownOpen(false);
-    }
-  };
-
   return (
     <>
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 bg-white border-b border-stone-200/50 flex items-center h-20 shrink-0 ${
-          isScrolled ? "shadow-sm" : ""
-        }`}
         id="app-header"
+        className={`sticky top-0 z-50 border-b bg-white/95 backdrop-blur-md transition-shadow ${
+          isScrolled ? "border-stone-200 shadow-sm" : "border-stone-200/70"
+        }`}
       >
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            {/* Logo area */}
-            <div className="flex items-center">
-              <Link
-                to="/"
-                className="flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-lg p-1"
-                aria-label="Tajweed Scholars Home"
-              >
-                <div className="w-10 h-10 rounded-xl bg-emerald-800 flex items-center justify-center text-amber-100 shadow-md">
-                  <Icon name="BookOpen" className="text-amber-100" size={22} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-display text-xl font-bold tracking-tight text-emerald-950 leading-tight">
-                    {SITE_CONFIG.name}
-                  </span>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-medium">
-                    Online Quran Academy
-                  </span>
-                </div>
-              </Link>
-            </div>
+        <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between px-4 sm:h-[4.5rem] sm:px-6 lg:h-20 lg:px-8">
+          <Link
+            to="/"
+            aria-label="Tajweed Scholars home"
+            className="flex min-h-10 shrink-0 items-center rounded-lg"
+          >
+            <img
+              src="/brand/logo-horizontal.svg"
+              alt="Tajweed Scholars"
+              width="1600"
+              height="400"
+              className="h-auto w-[205px] max-w-[calc(100vw-4.75rem)] object-contain min-[390px]:w-[225px] sm:w-[235px] lg:w-[270px]"
+            />
+          </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-8 text-sm font-medium" aria-label="Desktop menu">
-              <Link
-                to="/"
-                className="text-stone-700 hover:text-emerald-800 transition-colors py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-md px-1"
-              >
-                Home
-              </Link>
+          <nav className="hidden items-center gap-6 text-[15px] font-semibold text-stone-700 xl:gap-7 lg:flex" aria-label="Main navigation">
+            <Link to="/" className="flex min-h-11 items-center rounded-md hover:text-emerald-800">Home</Link>
 
-              {/* Programs Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  onKeyDown={handleDropdownKeyDown}
-                  aria-expanded={isDropdownOpen}
-                  aria-haspopup="true"
-                  aria-controls="programs-dropdown-menu"
-                  className="flex items-center gap-1 text-stone-700 hover:text-emerald-800 transition-colors py-2 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-md px-1"
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen((open) => !open)}
+                aria-expanded={isDropdownOpen}
+                aria-controls="programs-menu"
+                className="flex min-h-11 items-center gap-1.5 rounded-md hover:text-emerald-800"
+              >
+                Programs
+                <Icon name="ChevronDown" size={15} className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {isDropdownOpen && (
+                <div
+                  id="programs-menu"
+                  className="absolute left-1/2 top-full w-72 -translate-x-1/2 rounded-xl border border-stone-200 bg-stone-50 p-2 shadow-xl"
                 >
-                  Programs
-                  <Icon
-                    name={isDropdownOpen ? "ChevronUp" : "ChevronDown"}
-                    className="text-stone-400"
-                    size={16}
-                  />
-                </button>
-
-                <AnimatePresence>
-                  {isDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.15 }}
-                      id="programs-dropdown-menu"
-                      className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 rounded-xl bg-stone-50 border border-stone-200 shadow-xl p-2 z-50"
-                      role="menu"
+                  {NAVIGATION_LINKS.programs.map((program) => (
+                    <Link
+                      key={program.path}
+                      to={program.path}
+                      className="flex min-h-11 items-center rounded-lg px-3 text-sm text-stone-700 hover:bg-stone-100 hover:text-emerald-800"
                     >
-                      <div className="grid gap-1">
-                        {NAVIGATION_LINKS.programs.map((prog) => {
-                          const isActive = path === prog.path;
-                          return (
-                            <Link
-                              key={prog.path}
-                              to={prog.path}
-                              role="menuitem"
-                              className={`flex items-center gap-3 p-2.5 rounded-lg text-left transition-all ${
-                                isActive
-                                  ? "bg-emerald-50 text-emerald-950 font-semibold"
-                                  : "text-stone-700 hover:bg-stone-100 hover:text-emerald-900"
-                              } focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700`}
-                            >
-                              <div
-                                className={`w-8 h-8 rounded-md flex items-center justify-center ${
-                                  isActive ? "bg-emerald-800 text-amber-50" : "bg-emerald-50 text-emerald-800"
-                                }`}
-                              >
-                                <Icon
-                                  name={
-                                    prog.path.includes("kids")
-                                      ? "Baby"
-                                      : prog.path.includes("adult")
-                                      ? "GraduationCap"
-                                      : prog.path.includes("tajweed")
-                                      ? "BookOpen"
-                                      : prog.path.includes("hifz")
-                                      ? "Bookmark"
-                                      : prog.path.includes("arabic")
-                                      ? "Languages"
-                                      : "HeartHandshake"
-                                  }
-                                  size={16}
-                                />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-sm">{prog.label}</span>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <Link
-                to="/pricing"
-                className="text-stone-700 hover:text-emerald-800 transition-colors py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-md px-1"
-              >
-                Pricing
-              </Link>
-              <Link
-                to="/about"
-                className="text-stone-700 hover:text-emerald-800 transition-colors py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-md px-1"
-              >
-                About
-              </Link>
-              <Link
-                to="/contact"
-                className="text-stone-700 hover:text-emerald-800 transition-colors py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-md px-1"
-              >
-                Contact
-              </Link>
-            </nav>
-
-            {/* Book CTA Button Desktop */}
-            <div className="hidden lg:block">
-              <button
-                onClick={() => navigate("/free-trial")}
-                id="header-cta-button"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-md text-sm font-semibold text-stone-50 bg-emerald-800 hover:bg-emerald-900 shadow-md transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                Book 3 Free Trial Classes
-              </button>
+                      {program.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Mobile Menu Toggle Button */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                ref={mobileToggleRef}
-                aria-expanded={isMobileMenuOpen}
-                aria-label="Toggle Navigation Menu"
-                id="mobile-menu-toggle"
-                className="p-2 text-stone-700 hover:text-emerald-800 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
-              >
-                <Icon name={isMobileMenuOpen ? "X" : "Menu"} size={26} />
-              </button>
-            </div>
-          </div>
+            <Link to="/pricing" className="flex min-h-11 items-center rounded-md hover:text-emerald-800">Pricing</Link>
+            <Link to="/about" className="flex min-h-11 items-center rounded-md hover:text-emerald-800">About</Link>
+            <Link to="/contact" className="flex min-h-11 items-center rounded-md hover:text-emerald-800">Contact</Link>
+          </nav>
+
+          <button
+            type="button"
+            onClick={() => navigate("/free-trial")}
+            className="hidden min-h-11 items-center justify-center rounded-lg bg-emerald-800 px-5 text-sm font-bold text-stone-50 shadow-sm transition-colors hover:bg-emerald-900 lg:inline-flex"
+          >
+            Book 3 Free Trial Classes
+          </button>
+
+          <button
+            ref={toggleRef}
+            type="button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-navigation"
+            aria-label="Open navigation menu"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-emerald-800 hover:bg-emerald-50 lg:hidden"
+          >
+            <Icon name="Menu" size={25} />
+          </button>
         </div>
       </header>
 
-      {/* Mobile Drawer menu overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-stone-900 z-40 lg:hidden"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] lg:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            className="absolute inset-0 h-full w-full bg-stone-950/45"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div
+            ref={menuRef}
+            id="mobile-navigation"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            className="absolute right-0 top-0 flex h-full w-[min(88vw,22rem)] flex-col overflow-y-auto bg-stone-50 px-6 py-6 shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-stone-200 pb-5">
+              <span className="font-display text-2xl font-bold text-emerald-950">Explore</span>
+              <button
+                ref={closeRef}
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                aria-label="Close navigation menu"
+                className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-stone-100"
+              >
+                <Icon name="X" size={24} />
+              </button>
+            </div>
 
-            {/* Drawer */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-              ref={mobileMenuRef}
-              className="fixed right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-stone-50 border-l border-stone-200 shadow-2xl z-50 p-6 flex flex-col justify-between overflow-y-auto lg:hidden"
-              aria-label="Mobile menu"
+            <nav className="mt-6 flex flex-col text-base font-semibold text-stone-800" aria-label="Mobile navigation">
+              {NAVIGATION_LINKS.main.map((link) => (
+                <Link key={link.path} to={link.path} className="flex min-h-12 items-center border-b border-stone-200/70 hover:text-emerald-800">
+                  {link.label}
+                </Link>
+              ))}
+              <p className="mb-2 mt-7 text-xs font-bold text-emerald-800">Programs</p>
+              {NAVIGATION_LINKS.programs.map((program) => (
+                <Link key={program.path} to={program.path} className="flex min-h-11 items-center text-sm text-stone-600 hover:text-emerald-800">
+                  {program.label}
+                </Link>
+              ))}
+            </nav>
+
+            <button
+              type="button"
+              onClick={() => navigate("/free-trial")}
+              className="mt-8 min-h-12 rounded-lg bg-emerald-800 px-4 text-sm font-bold text-stone-50 hover:bg-emerald-900"
             >
-              <div>
-                {/* Header inside Mobile Drawer */}
-                <div className="flex items-center justify-between mb-8 pb-4 border-b border-stone-200">
-                  <span className="font-display font-bold text-lg text-emerald-950">Menu</span>
-                  <button
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    ref={mobileCloseRef}
-                    aria-label="Close menu"
-                    id="mobile-menu-close"
-                    className="p-1 text-stone-500 hover:text-emerald-800 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
-                  >
-                    <Icon name="X" size={24} />
-                  </button>
-                </div>
-
-                {/* Primary links */}
-                <nav className="flex flex-col gap-4 text-base font-semibold" aria-label="Mobile Navigation Links">
-                  <Link
-                    to="/"
-                    className="text-stone-800 hover:text-emerald-800 py-1 border-b border-stone-100 focus:outline-none"
-                  >
-                    Home
-                  </Link>
-                  <Link
-                    to="/pricing"
-                    className="text-stone-800 hover:text-emerald-800 py-1 border-b border-stone-100 focus:outline-none"
-                  >
-                    Pricing
-                  </Link>
-                  <Link
-                    to="/about"
-                    className="text-stone-800 hover:text-emerald-800 py-1 border-b border-stone-100 focus:outline-none"
-                  >
-                    About
-                  </Link>
-                  <Link
-                    to="/contact"
-                    className="text-stone-800 hover:text-emerald-800 py-1 border-b border-stone-100 focus:outline-none"
-                  >
-                    Contact
-                  </Link>
-
-                  {/* Programs List */}
-                  <div className="mt-4">
-                    <h3 className="text-xs uppercase tracking-wider text-emerald-800 font-bold mb-3">
-                      Our Programs
-                    </h3>
-                    <div className="grid gap-2 pl-2">
-                      {NAVIGATION_LINKS.programs.map((prog) => (
-                        <Link
-                          key={prog.path}
-                          to={prog.path}
-                          className="flex items-center gap-2.5 py-1.5 text-stone-600 hover:text-emerald-800 text-sm focus:outline-none"
-                        >
-                          <Icon name="BookOpen" className="text-emerald-700/60" size={14} />
-                          {prog.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </nav>
-              </div>
-
-              {/* Bottom Drawer CTA */}
-              <div className="mt-8 pt-6 border-t border-stone-200">
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    navigate("/free-trial");
-                  }}
-                  id="mobile-menu-cta-button"
-                  className="w-full inline-flex items-center justify-center px-4 py-3 rounded-md text-base font-bold text-stone-50 bg-emerald-800 hover:bg-emerald-900 shadow-md transition-colors"
-                >
-                  Book 3 Free Trial Classes
-                </button>
-                <p className="text-[11px] text-stone-400 text-center mt-3 font-medium">
-                  3 fully free classes • No card details required
-                </p>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              Book 3 Free Trial Classes
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };
