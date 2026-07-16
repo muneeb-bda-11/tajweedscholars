@@ -1,20 +1,27 @@
-export type LearnerType = "My child" | "Myself";
-export type AgeGroup = "4–6" | "7–9" | "10–12" | "13–15" | "16–17" | "Adult";
-export type MainGoal = "Learn Qaida" | "Improve Quran reading" | "Tajweed correction" | "Hifz" | "Not sure yet";
-export type PreferredDay = "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
-export type PreferredTime = "Morning" | "Afternoon" | "Evening";
+import type { AgeGroup, LearnerType, MainGoal, PreferredDay, PreferredTime } from "../shared/trialOptions";
+export type { AgeGroup, LearnerType, MainGoal, PreferredDay, PreferredTime } from "../shared/trialOptions";
 
 export interface TrialSubmissionPayload {
-  learner: { type: LearnerType; ageGroup: AgeGroup; mainGoal: MainGoal };
-  contact: { name: string; guardianName?: string; whatsappNumber: string; email: string; country: string; timeZone: string };
-  availability: { preferredDays: PreferredDay[]; preferredTime: PreferredTime; note?: string };
-  consent: true;
-  source: "Website / Free Trial Form";
+  learnerType: LearnerType; ageGroup: AgeGroup; mainGoal: MainGoal; contactName: string; guardianName: string;
+  countryCode: string; countryName: string; region: string; timeZone: string; whatsapp: string; email: string;
+  preferredDays: PreferredDay[]; preferredTime: PreferredTime; notes: string; consent: true;
+  submissionId: string; honeypot: string; formStartedAt: number;
+}
+export interface TrialSubmissionSuccess { ok: true; leadId: string; message: string }
+type ErrorResponse = { ok: false; code?: string; message?: string; fieldErrors?: Record<string, string> };
+
+export class TrialSubmissionError extends Error {
+  fieldErrors: Record<string, string>;
+  constructor(message: string, fieldErrors: Record<string, string> = {}) { super(message); this.name = "TrialSubmissionError"; this.fieldErrors = fieldErrors; }
 }
 
-/** Connect the approved lead API here. This function must never silently discard production data. */
-export async function submitTrialRequest(_payload: TrialSubmissionPayload): Promise<{ status: "development" }> {
-  const isDevelopment = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
-  if (isDevelopment) return { status: "development" };
-  throw new Error("Lead submission service is not connected yet.");
+export async function submitTrialRequest(payload: TrialSubmissionPayload): Promise<TrialSubmissionSuccess> {
+  let response: Response;
+  try { response = await fetch("/api/trial-leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); }
+  catch { throw new TrialSubmissionError("We could not submit your request. Please try again or contact us through WhatsApp."); }
+  let result: TrialSubmissionSuccess | ErrorResponse;
+  try { result = await response.json() as TrialSubmissionSuccess | ErrorResponse; }
+  catch { throw new TrialSubmissionError("We could not submit your request. Please try again or contact us through WhatsApp."); }
+  if (!response.ok || !result.ok) { const error = result as ErrorResponse; throw new TrialSubmissionError(error.message || "Please correct the highlighted fields and try again.", error.fieldErrors); }
+  return result;
 }
