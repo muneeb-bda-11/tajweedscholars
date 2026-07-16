@@ -3,7 +3,7 @@ import https from "node:https";
 import { URL } from "node:url";
 import { getCountries, isPossiblePhoneNumber, parsePhoneNumber } from "react-phone-number-input";
 import type { TrialSubmissionPayload } from "../src/lib/trialSubmission";
-import { CANONICAL_VALUES, UNDER_18_AGE_GROUPS } from "../src/shared/trialOptions.ts";
+import { CANONICAL_VALUES, UNDER_18_AGE_GROUPS } from "../src/shared/trialOptions.js";
 
 type ApiRequest = IncomingMessage & { body?: unknown }; type FieldErrors = Record<string, string>;
 const MAX_BODY_BYTES = 16_384, UPSTREAM_TIMEOUT_MS = 15_000, MAX_REDIRECTS = 5, ISO_COUNTRIES = new Set<string>(getCountries());
