@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { addRecentIdentifier, clearSessionIdentifiers, detectInitialCountry, getNationalPhonePlaceholder, getPhonePatternPlaceholder, getTimeZoneValues, groupTimeZones, learnerNameLabel, normalizePhoneEntry, orderCountries, readSessionIdentifiers, regionField, resolveDeviceDefaults, submittedGuardianName, timeZoneLabel, timeZoneSearchText, writeSessionIdentifiers } from "./trialUx.ts";
+import { addRecentIdentifier, clearSessionIdentifiers, detectInitialCountry, getNationalPhonePlaceholder, getPhonePatternPlaceholder, getTimeZoneValues, groupTimeZones, learnerNameLabel, normalizePhoneEntry, orderCountries, readSessionIdentifiers, regionField, resolveDeviceDefaults, timeZoneLabel, timeZoneSearchText, writeSessionIdentifiers } from "./trialUx.ts";
 import { getCountries, type Country } from "react-phone-number-input";
 import countryLabels from "react-phone-number-input/locale/en";
 
@@ -23,8 +23,6 @@ assert.equal(detectInitialCountry([], "Etc/Unknown"), undefined);
 
 assert.equal(learnerNameLabel("child"), "Learner’s name *");
 assert.equal(learnerNameLabel("self"), "Your name *");
-assert.equal(submittedGuardianName("self", "Must be cleared"), "");
-assert.equal(submittedGuardianName("child", " Parent "), "Parent");
 
 const allCountries = getCountries().map((code) => ({ code, name: countryLabels[code] }));
 const ordered = orderCountries(allCountries, "PK");

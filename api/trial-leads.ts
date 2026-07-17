@@ -3,7 +3,7 @@ import https from "node:https";
 import { URL } from "node:url";
 import { getCountries, isPossiblePhoneNumber } from "react-phone-number-input";
 import type { TrialSubmissionPayload } from "../src/lib/trialSubmission";
-import { CANONICAL_VALUES, UNDER_18_AGE_GROUPS } from "../src/shared/trialOptions.js";
+import { CANONICAL_VALUES, requiresGuardian } from "../src/shared/trialOptions.js";
 
 type ApiRequest = IncomingMessage & { body?: unknown }; type FieldErrors = Record<string, string>;
 const MAX_BODY_BYTES = 16_384, UPSTREAM_TIMEOUT_MS = 15_000, MAX_REDIRECTS = 5, ISO_COUNTRIES = new Set<string>(getCountries());
@@ -39,9 +39,10 @@ export function validateTrialPayload(value: unknown): { payload?: TrialSubmissio
   const errors: FieldErrors = {}; if (!value || typeof value !== "object" || Array.isArray(value)) return { fieldErrors: { form: "Invalid request body." } }; const body = value as Record<string, unknown>;
   if (!CANONICAL_VALUES.learnerType.includes(body.learnerType as never)) errors.learnerType = "Choose a valid learner type.";
   if (!CANONICAL_VALUES.ageGroup.includes(body.ageGroup as never)) errors.ageGroup = "Choose a valid age group.";
+  if (body.learnerType === "child" && body.ageGroup === "adult") errors.ageGroup = "Choose a valid age group.";
   if (!CANONICAL_VALUES.mainGoal.includes(body.mainGoal as never)) errors.mainGoal = "Choose a valid main goal.";
   if (!text(body.contactName, 120)) errors.contactName = "Enter the parent or learner name.";
-  const minor = UNDER_18_AGE_GROUPS.includes(body.ageGroup as never); if (minor && !text(body.guardianName, 120)) errors.guardianName = "Enter a parent or guardian name."; else if (!text(body.guardianName, 120, false)) errors.guardianName = "Guardian name must be 120 characters or fewer.";
+  const guardianRequired = requiresGuardian(body.ageGroup); if (guardianRequired && !text(body.guardianName, 120)) errors.guardianName = "Enter a parent or guardian name."; else if (!text(body.guardianName, 120, false)) errors.guardianName = "Guardian name must be 120 characters or fewer.";
   if (typeof body.countryCode !== "string" || !ISO_COUNTRIES.has(body.countryCode)) errors.countryCode = "Choose a valid country.";
   if (!text(body.countryName, 100)) errors.countryName = "Choose a valid country.";
   if (!text(body.region, 100, false)) errors.region = "State / Province / Region must be 100 characters or fewer.";
@@ -54,7 +55,7 @@ export function validateTrialPayload(value: unknown): { payload?: TrialSubmissio
   if (!text(body.submissionId, 100)) errors.submissionId = "Invalid submission identifier."; if (body.honeypot !== "") errors.honeypot = "Invalid submission.";
   if (typeof body.formStartedAt !== "number" || !Number.isFinite(body.formStartedAt) || body.formStartedAt <= 0 || body.formStartedAt > Date.now()) errors.formStartedAt = "Invalid form start time.";
   if (Object.keys(errors).length) return { fieldErrors: errors };
-  return { payload: { learnerType: body.learnerType as TrialSubmissionPayload["learnerType"], ageGroup: body.ageGroup as TrialSubmissionPayload["ageGroup"], mainGoal: body.mainGoal as TrialSubmissionPayload["mainGoal"], contactName: String(body.contactName).trim(), guardianName: String(body.guardianName).trim(), countryCode: String(body.countryCode), countryName: String(body.countryName).trim(), region: String(body.region).trim(), timeZone: String(body.timeZone).trim(), whatsapp: String(body.whatsapp), email: normalizedEmail, preferredDays: [...body.preferredDays as TrialSubmissionPayload["preferredDays"]], preferredTime: body.preferredTime as TrialSubmissionPayload["preferredTime"], notes: String(body.notes).trim(), consent: true, submissionId: String(body.submissionId), honeypot: "", formStartedAt: body.formStartedAt as number }, fieldErrors: {} };
+  return { payload: { learnerType: body.learnerType as TrialSubmissionPayload["learnerType"], ageGroup: body.ageGroup as TrialSubmissionPayload["ageGroup"], mainGoal: body.mainGoal as TrialSubmissionPayload["mainGoal"], contactName: String(body.contactName).trim(), guardianName: guardianRequired ? String(body.guardianName).trim() : "", countryCode: String(body.countryCode), countryName: String(body.countryName).trim(), region: String(body.region).trim(), timeZone: String(body.timeZone).trim(), whatsapp: String(body.whatsapp), email: normalizedEmail, preferredDays: [...body.preferredDays as TrialSubmissionPayload["preferredDays"]], preferredTime: body.preferredTime as TrialSubmissionPayload["preferredTime"], notes: String(body.notes).trim(), consent: true, submissionId: String(body.submissionId), honeypot: "", formStartedAt: body.formStartedAt as number }, fieldErrors: {} };
 }
 
 export type UpstreamResult = { statusCode: number; body: string };
@@ -64,6 +65,10 @@ export type RequestOnce = (request: UpstreamRequest) => Promise<UpstreamResult &
 export class UpstreamError extends Error {
   diagnosticCode: string;
   constructor(diagnosticCode: string, message = diagnosticCode) { super(message); this.name = "UpstreamError"; this.diagnosticCode = diagnosticCode; }
+}
+export class UpstreamValidationError extends Error {
+  fieldErrors: FieldErrors;
+  constructor(fieldErrors: FieldErrors) { super("UPSTREAM_VALIDATION_ERROR"); this.name = "UpstreamValidationError"; this.fieldErrors = fieldErrors; }
 }
 
 export function validateAppsScriptUrl(value: string): URL {
@@ -105,6 +110,11 @@ export async function requestAppsScript(webhookUrl: string, payload: object, opt
 const safeDiagnostic = (error: unknown) => error instanceof UpstreamError ? error.diagnosticCode : "UPSTREAM_INVALID_RESPONSE";
 export function parseAppsScriptResponse(upstream: UpstreamResult): { ok: true; leadId: string } {
   let result: unknown; try { result = JSON.parse(upstream.body); } catch { throw new UpstreamError("UPSTREAM_INVALID_RESPONSE"); }
+  if (result && typeof result === "object" && (result as { ok?: unknown }).ok === false && (result as { code?: unknown }).code === "VALIDATION_ERROR" && (result as { fieldErrors?: unknown }).fieldErrors && typeof (result as { fieldErrors?: unknown }).fieldErrors === "object") {
+    const allowed = new Set(["learnerType", "ageGroup", "mainGoal", "contactName", "guardianName", "countryCode", "countryName", "region", "timeZone", "whatsapp", "email", "preferredDays", "preferredTime", "notes", "consent"]), fieldErrors: FieldErrors = {};
+    for (const [field, message] of Object.entries((result as { fieldErrors: Record<string, unknown> }).fieldErrors)) if (allowed.has(field) && typeof message === "string") fieldErrors[field] = message;
+    if (Object.keys(fieldErrors).length) throw new UpstreamValidationError(fieldErrors);
+  }
   if (upstream.statusCode < 200 || upstream.statusCode >= 300 || !result || typeof result !== "object" || (result as { ok?: unknown }).ok !== true || typeof (result as { leadId?: unknown }).leadId !== "string" || !/^TS-[A-Za-z0-9-]{1,80}$/.test((result as { leadId: string }).leadId)) throw new UpstreamError("UPSTREAM_INVALID_RESPONSE");
   return { ok: true, leadId: (result as { leadId: string }).leadId };
 }
@@ -119,9 +129,12 @@ export default async function handler(request: ApiRequest, response: ServerRespo
   if (body && Buffer.byteLength(JSON.stringify(body), "utf8") > MAX_BODY_BYTES) return send(response, 413, { ok: false, code: "PAYLOAD_TOO_LARGE", message: "Request is too large." });
   const normalized = normalizeTrialPayload(body);
   if (debug && normalized && typeof normalized === "object") console.info("Trial lead: normalized field names", Object.keys(normalized));
+  const guardianRequired = normalized && typeof normalized === "object" && requiresGuardian((normalized as Record<string, unknown>).ageGroup);
+  const guardianPresent = normalized && typeof normalized === "object" && typeof (normalized as Record<string, unknown>).guardianName === "string" && Boolean(String((normalized as Record<string, unknown>).guardianName).trim());
+  if (debug) { console.info("Trial lead: guardian required", guardianRequired); console.info("Trial lead: guardian present", guardianPresent); }
   const validated = validateTrialPayload(normalized); if (!validated.payload) { if (debug) console.info("Trial lead: validation failed fields", Object.keys(validated.fieldErrors)); return send(response, 400, { ok: false, code: "VALIDATION_ERROR", message: "Please correct the highlighted fields.", fieldErrors: validated.fieldErrors }); }
   if (debug) console.info("Trial lead: validation passed");
   const webhookUrl = process.env.APPS_SCRIPT_WEB_APP_URL, apiSecret = process.env.APPS_SCRIPT_API_SECRET; if (!webhookUrl || !apiSecret) return send(response, 500, { ok: false, code: "SUBMISSION_FAILED", message: "We could not submit your request. Please try again or contact us through WhatsApp.", ...(debug ? { diagnosticCode: "UPSTREAM_CONFIG_ERROR" } : {}) });
   try { const result = parseAppsScriptResponse(await requestAppsScript(webhookUrl, { ...validated.payload, apiSecret }, { debug })); if (debug) console.info("Trial lead: returned lead ID", result.leadId); return send(response, 200, { ok: true, leadId: result.leadId, message: "Your trial request has been received." }); }
-  catch (error) { const diagnosticCode = safeDiagnostic(error); if (debug) console.info("Trial lead: safe network error code or error name", diagnosticCode); return send(response, 502, { ok: false, code: "SUBMISSION_FAILED", message: "We could not submit your request. Please try again or contact us through WhatsApp.", ...(debug ? { diagnosticCode } : {}) }); }
+  catch (error) { if (error instanceof UpstreamValidationError) { if (debug) console.info("Trial lead: upstream validation failed fields", Object.keys(error.fieldErrors)); return send(response, 400, { ok: false, code: "VALIDATION_ERROR", message: "Please correct the highlighted fields.", fieldErrors: error.fieldErrors }); } const diagnosticCode = safeDiagnostic(error); if (debug) console.info("Trial lead: safe network error code or error name", diagnosticCode); return send(response, 502, { ok: false, code: "SUBMISSION_FAILED", message: "We could not submit your request. Please try again or contact us through WhatsApp.", ...(debug ? { diagnosticCode } : {}) }); }
 }

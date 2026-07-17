@@ -8,7 +8,6 @@ export type CountryOption = { code: Country; name: string };
 export type GroupedOption = { value: string; label: string; group?: string; search?: string };
 export const POPULAR_COUNTRY_CODES: readonly Country[] = ["US", "GB", "CA", "AU", "AE", "PK"];
 export const learnerNameLabel = (learnerType: "child" | "self" | "") => learnerType === "child" ? "Learner’s name *" : "Your name *";
-export const submittedGuardianName = (learnerType: "child" | "self" | "", value: string) => learnerType === "child" ? value.trim() : "";
 
 export const orderCountries = (countries: CountryOption[], detected?: Country, recent: readonly Country[] = []): (CountryOption & { group: string })[] => {
   const byCode = new Map(countries.map((country) => [country.code, country]));

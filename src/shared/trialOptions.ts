@@ -17,3 +17,4 @@ export const CANONICAL_VALUES = {
   preferredTime: PREFERRED_TIME_OPTIONS.map(({ value }) => value)
 } as const;
 export const UNDER_18_AGE_GROUPS: readonly AgeGroup[] = ["4-6", "7-9", "10-12", "13-15", "16-17"];
+export const requiresGuardian = (ageGroup: AgeGroup | "" | unknown): boolean => UNDER_18_AGE_GROUPS.includes(ageGroup as AgeGroup);
