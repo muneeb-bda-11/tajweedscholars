@@ -13,6 +13,7 @@
  */
 
 var TRIAL_SHEET = "Trial Leads";
+var ACTIVITY_SHEET_DEFAULT = "Lead Activity Log";
 
 var TRIAL_HEADERS = [
   "Lead ID",
@@ -36,6 +37,18 @@ var TRIAL_HEADERS = [
   "Consent",
   "Follow-up Due"
 ];
+
+var OPERATIONAL_HEADERS = [
+  "Founder Alert Status", "Founder Alert Sent At", "User Email Status",
+  "User Email Sent At", "Notification Retry Count",
+  "Notification Last Attempt At", "Total Processing Time Ms", "Last Error",
+  "Last Error At"
+];
+var ACTIVITY_HEADERS = [
+  "Event ID", "Lead ID", "Event", "Status", "Timestamp UTC",
+  "Duration Ms", "Attempt", "Error Code", "Error Message"
+];
+var NOTIFICATION_STATES = ["Queued", "Sent", "Failed", "Retrying", "Not applicable"];
 
 var LEAD_STATUSES = [
   "New",
@@ -115,6 +128,8 @@ function doPost(e) {
     var duplicateKey = SUBMISSION_PREFIX + hash;
     var leadId;
     var spreadsheetUrl;
+    var isNewLead = false;
+    var savedAt = Date.now();
 
     var lock = LockService.getScriptLock();
     lock.waitLock(10000);
@@ -124,12 +139,15 @@ function doPost(e) {
         requiredProperty_(props, "SPREADSHEET_ID")
       );
 
-      var sheet = spreadsheet.getSheetByName(TRIAL_SHEET);
+      var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
       if (!sheet) {
         throw new Error("The existing Trial Leads sheet was not found.");
       }
 
       assertHeaders_(sheet);
+      ensureOperationalHeaders_(sheet);
+      ensureAgeGroupPlainText_(sheet);
+      ensureActivitySheet_(spreadsheet, props);
       spreadsheetUrl = spreadsheet.getUrl();
 
       var existingLeadId = props.getProperty(duplicateKey);
@@ -141,26 +159,26 @@ function doPost(e) {
 
         sheet.appendRow(rowFor_(leadId, normalized));
         SpreadsheetApp.flush();
+        isNewLead = true;
 
         props.setProperty(duplicateKey, leadId);
         console.log("Lead row saved: " + leadId);
+        logActivity_(spreadsheet, props, leadId, "LEAD_RECEIVED", "Success", 0, 0, "", "");
+        logActivity_(spreadsheet, props, leadId, "VALIDATION_PASSED", "Success", 0, 0, "", "");
+        logActivity_(spreadsheet, props, leadId, "SHEET_SAVED", "Success", Date.now() - savedAt, 0, "", "");
+        logActivity_(spreadsheet, props, leadId, "FOUNDER_EMAIL_QUEUED", "Queued", 0, 0, "", "");
+        logActivity_(spreadsheet, props, leadId, "USER_EMAIL_QUEUED", "Queued", 0, 0, "", "");
       }
     } finally {
       lock.releaseLock();
     }
 
-    try {
-      queueLeadNotification_(
-        props,
-        hash,
-        leadId,
-        spreadsheetUrl,
-        normalized
-      );
-    } catch (queueError) {
-      console.error("Notification queue could not be created for lead: " + leadId);
-    }
+    if (isNewLead) console.log("Notifications queued for lead: " + leadId);
 
+    try {
+      var successSpreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
+      logActivity_(successSpreadsheet, props, leadId, "SUCCESS_RETURNED", "Success", Date.now() - savedAt, 0, "", "");
+    } catch (logError) { console.error("Success activity log failed: " + safeErrorCode_(logError)); }
     return json_(
       200,
       true,
@@ -314,7 +332,7 @@ function checkCRMConfiguration() {
 
   if (spreadsheetId) {
     var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
-    var sheet = spreadsheet.getSheetByName(TRIAL_SHEET);
+    var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
 
     console.log("Trial Leads sheet found: " + Boolean(sheet));
 
@@ -331,7 +349,7 @@ function migrateTrialLeadsSheet() {
     requiredProperty_(props, "SPREADSHEET_ID")
   );
 
-  var sheet = spreadsheet.getSheetByName(TRIAL_SHEET);
+  var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
   if (!sheet) {
     throw new Error(
       "The existing Trial Leads sheet was not found; migration will not create one."
@@ -681,28 +699,177 @@ function validateTrialLead_(lead) {
 }
 
 function rowFor_(leadId, lead) {
+  var ageGroup = canonicalAgeGroup_(lead.ageGroup);
+  var view = presentationValues_(lead);
   return [
     leadId,
     new Date().toISOString(),
     "New",
     "Website / Free Trial Form",
     safe_(lead.learnerType),
-    safe_(lead.ageGroup),
+    ageGroup,
     safe_(lead.mainGoal),
     safe_(lead.contactName),
-    safe_(lead.guardianName),
+    view.guardian,
     safe_(lead.countryCode),
     safe_(lead.countryName),
-    safe_(lead.region),
+    view.region,
     safe_(lead.timeZone),
     safe_(lead.whatsapp),
     safe_(lead.email),
     safe_(lead.preferredDays.join(", ")),
     safe_(lead.preferredTime),
-    safe_(lead.notes),
+    view.notes,
     "Yes",
-    ""
+    "",
+    "Queued", "", "Queued", "", 0, "", "", "", ""
   ];
+}
+
+function setupPhase1Admissions() {
+  var props = PropertiesService.getScriptProperties();
+  var spreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
+  var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
+  if (!sheet) throw new Error("TRIAL_LEADS_SHEET_NOT_FOUND");
+  assertHeaders_(sheet);
+  ensureOperationalHeaders_(sheet);
+  ensureAgeGroupPlainText_(sheet);
+  ensureActivitySheet_(spreadsheet, props);
+  refreshNotificationTrigger_();
+  SpreadsheetApp.flush();
+  return verifyPhase1AdmissionsSetup();
+}
+
+function verifyPhase1AdmissionsSetup() {
+  var props = PropertiesService.getScriptProperties();
+  var result = { ageGroupColumnFound: false, ageGroupPlainTextFormatReady: false, operationalColumnsReady: false, activityLogReady: false, notificationTriggerReady: false };
+  var spreadsheetId = props.getProperty("SPREADSHEET_ID");
+  if (spreadsheetId) {
+    var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+    var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
+    if (sheet) {
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+      var ageIndex = headers.indexOf("Age Group");
+      result.ageGroupColumnFound = ageIndex >= 0;
+      result.operationalColumnsReady = OPERATIONAL_HEADERS.every(function (header) { return headers.indexOf(header) >= 0; });
+      if (ageIndex >= 0 && sheet.getMaxRows() > 1) result.ageGroupPlainTextFormatReady = sheet.getRange(2, ageIndex + 1, sheet.getMaxRows() - 1, 1).getNumberFormats().every(function (row) { return row[0] === "@"; });
+    }
+    result.activityLogReady = Boolean(spreadsheet.getSheetByName(props.getProperty("ACTIVITY_LOG_SHEET_NAME") || ACTIVITY_SHEET_DEFAULT));
+  }
+  result.notificationTriggerReady = ScriptApp.getProjectTriggers().filter(function (trigger) { return trigger.getHandlerFunction() === "processNotificationQueue"; }).length === 1;
+  return result;
+}
+
+function canonicalAgeGroup_(value) {
+  var ageGroup = String(value == null ? "" : value);
+  if (ENUMS.ageGroup.indexOf(ageGroup) < 0) throw new Error("INVALID_AGE_GROUP");
+  return ageGroup;
+}
+
+function ensureAgeGroupPlainText_(sheet) {
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+  var ageIndex = headers.indexOf("Age Group");
+  if (ageIndex < 0) throw new Error("AGE_GROUP_COLUMN_NOT_FOUND");
+  if (sheet.getMaxRows() > 1) sheet.getRange(2, ageIndex + 1, sheet.getMaxRows() - 1, 1).setNumberFormat("@");
+  return ageIndex;
+}
+
+function repairedAgeGroup_(value, displayValue) {
+  if (typeof value === "string" && ENUMS.ageGroup.indexOf(value) >= 0) return value;
+  var date = value instanceof Date && !isNaN(value.getTime()) ? value : null;
+  if (!date && typeof value === "number" && isFinite(value)) date = new Date(Date.UTC(1899, 11, 30) + Math.round(value) * 86400000);
+  if (!date && typeof displayValue === "string") {
+    var match = displayValue.match(/^(4[\/-]6|7[\/-]9|10[\/-]12)(?:[\/-]\d{2,4})?$/);
+    if (match) return match[1].replace(/\//g, "-");
+  }
+  if (!date) return null;
+  var key = (date.getMonth() + 1) + "-" + date.getDate();
+  return ["4-6", "7-9", "10-12"].indexOf(key) >= 0 ? key : null;
+}
+
+function repairPhase1AdmissionsDisplayData() {
+  var props = PropertiesService.getScriptProperties();
+  var spreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
+  var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
+  if (!sheet) throw new Error("TRIAL_LEADS_SHEET_NOT_FOUND");
+  assertHeaders_(sheet);
+  var backupName = trialSheetName_(props) + " - Pre Display Repair";
+  if (!spreadsheet.getSheetByName(backupName)) sheet.copyTo(spreadsheet).setName(backupName);
+  var ageIndex = ensureAgeGroupPlainText_(sheet);
+  var summary = { rowsChecked: 0, ageGroupsRepaired: 0, optionalDisplayValuesUpdated: 0, rowsSkipped: 0 };
+  var rowCount = Math.max(sheet.getLastRow() - 1, 0);
+  if (!rowCount) return summary;
+  var range = sheet.getRange(2, ageIndex + 1, rowCount, 1);
+  var values = range.getValues(), displayValues = range.getDisplayValues();
+  values.forEach(function (row, index) {
+    summary.rowsChecked += 1;
+    var original = row[0], repaired = repairedAgeGroup_(original, displayValues[index][0]);
+    if (repaired && String(original) !== repaired) { sheet.getRange(index + 2, ageIndex + 1).setValue(repaired); summary.ageGroupsRepaired += 1; }
+    else if (!repaired && ENUMS.ageGroup.indexOf(String(original)) < 0) summary.rowsSkipped += 1;
+  });
+  SpreadsheetApp.flush();
+  return summary;
+}
+
+function refreshNotificationTrigger_() {
+  ScriptApp.getProjectTriggers().forEach(function (trigger) { if (trigger.getHandlerFunction() === "processNotificationQueue") ScriptApp.deleteTrigger(trigger); });
+  ScriptApp.newTrigger("processNotificationQueue").timeBased().everyMinutes(5).create();
+}
+
+function processNotificationQueue() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return { skipped: true, reason: "LOCKED" };
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var spreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
+    var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
+    if (!sheet) throw new Error("TRIAL_LEADS_SHEET_NOT_FOUND");
+    var map = ensureOperationalHeaders_(sheet), lastRow = sheet.getLastRow(), maxAttempts = maxNotificationAttempts_(props), processed = 0;
+    if (lastRow < 2) return { processed: 0 };
+    var values = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+    values.forEach(function (row, offset) {
+      var founderStatus = String(row[map["Founder Alert Status"]] || "Queued"), userStatus = String(row[map["User Email Status"]] || "Queued"), attempts = Number(row[map["Notification Retry Count"]] || 0);
+      if (!notificationEligible_(founderStatus, userStatus, attempts, maxAttempts)) return;
+      var rowNumber = offset + 2, lead = leadFromRow_(row, map), started = Date.now(), attempt = attempts + 1;
+      updateCell_(sheet, rowNumber, map, "Notification Retry Count", attempt);
+      updateCell_(sheet, rowNumber, map, "Notification Last Attempt At", new Date().toISOString());
+      if (attempt > 1) logActivity_(spreadsheet, props, lead.leadId, "NOTIFICATION_RETRY_STARTED", "Retrying", 0, attempt, "", "");
+      var errors = [];
+      if (founderStatus !== "Sent" && notificationStatusEligible_(founderStatus)) {
+        updateCell_(sheet, rowNumber, map, "Founder Alert Status", attempt > 1 ? "Retrying" : "Queued");
+        try { sendFounderLeadEmail_(lead, props); updateCell_(sheet, rowNumber, map, "Founder Alert Status", "Sent"); updateCell_(sheet, rowNumber, map, "Founder Alert Sent At", new Date().toISOString()); logActivity_(spreadsheet, props, lead.leadId, "FOUNDER_EMAIL_SENT", "Sent", Date.now() - started, attempt, "", ""); }
+        catch (error) { errors.push(error); updateCell_(sheet, rowNumber, map, "Founder Alert Status", attempt >= maxAttempts ? "Failed" : "Retrying"); logActivity_(spreadsheet, props, lead.leadId, "FOUNDER_EMAIL_FAILED", "Failed", Date.now() - started, attempt, safeErrorCode_(error), safeErrorMessage_(error)); }
+      }
+      if (userStatus !== "Sent" && notificationStatusEligible_(userStatus)) {
+        updateCell_(sheet, rowNumber, map, "User Email Status", attempt > 1 ? "Retrying" : "Queued");
+        try { sendSubmitterAcknowledgement_(lead, props); updateCell_(sheet, rowNumber, map, "User Email Status", "Sent"); updateCell_(sheet, rowNumber, map, "User Email Sent At", new Date().toISOString()); logActivity_(spreadsheet, props, lead.leadId, "USER_EMAIL_SENT", "Sent", Date.now() - started, attempt, "", ""); }
+        catch (error) { errors.push(error); updateCell_(sheet, rowNumber, map, "User Email Status", attempt >= maxAttempts ? "Failed" : "Retrying"); logActivity_(spreadsheet, props, lead.leadId, "USER_EMAIL_FAILED", "Failed", Date.now() - started, attempt, safeErrorCode_(error), safeErrorMessage_(error)); }
+      }
+      updateCell_(sheet, rowNumber, map, "Total Processing Time Ms", Date.now() - started);
+      updateCell_(sheet, rowNumber, map, "Last Error", errors.length ? safeErrorCode_(errors[0]) : "");
+      updateCell_(sheet, rowNumber, map, "Last Error At", errors.length ? new Date().toISOString() : "");
+      if (errors.length && attempt >= maxAttempts) logActivity_(spreadsheet, props, lead.leadId, "NOTIFICATION_RETRY_EXHAUSTED", "Failed", Date.now() - started, attempt, safeErrorCode_(errors[0]), safeErrorMessage_(errors[0]));
+      processed += 1;
+    });
+    SpreadsheetApp.flush();
+    return { processed: processed };
+  } finally { lock.releaseLock(); }
+}
+
+function notificationStatusEligible_(status) { return ["Queued", "Retrying", "Failed"].indexOf(status) >= 0; }
+function notificationEligible_(founderStatus, userStatus, attempts, maxAttempts) { return attempts < maxAttempts && (notificationStatusEligible_(founderStatus) || notificationStatusEligible_(userStatus)); }
+function retryExhausted_(attempts, maxAttempts) { return attempts >= maxAttempts; }
+function maxNotificationAttempts_(props) { var value = Number(props.getProperty("MAX_NOTIFICATION_ATTEMPTS") || 3); return Number.isFinite(value) && value > 0 ? Math.floor(value) : 3; }
+function trialSheetName_(props) { return props.getProperty("TRIAL_LEADS_SHEET_NAME") || TRIAL_SHEET; }
+function updateCell_(sheet, row, map, header, value) { sheet.getRange(row, map[header] + 1).setValue(value); }
+
+function leadFromRow_(row, map) {
+  var storedAge = row[map["Age Group"]];
+  return { leadId: String(row[map["Lead ID"]] || ""), receivedAt: row[map["Submitted At UTC"]], learnerType: String(row[map["Learner Type"]] || ""), ageGroup: repairedAgeGroup_(storedAge, "") || String(storedAge || ""), mainGoal: String(row[map["Main Goal"]] || ""), contactName: String(row[map["Learner or Parent Name"]] || ""), guardianName: String(row[map["Guardian Name"]] || ""), countryCode: String(row[map["Country Code"]] || ""), countryName: String(row[map["Country"]] || ""), region: String(row[map["State / Province / Region"]] || ""), timeZone: String(row[map["Time Zone"]] || ""), whatsapp: String(row[map["WhatsApp"]] || ""), email: String(row[map["Email"]] || ""), preferredDays: String(row[map["Preferred Days"]] || "").split(/,\s*/).filter(Boolean), preferredTime: String(row[map["Preferred Time"]] || ""), notes: String(row[map["Notes"]] || ""), spreadsheetUrl: "https://docs.google.com/spreadsheets/d/" + requiredProperty_(PropertiesService.getScriptProperties(), "SPREADSHEET_ID") };
+}
+
+function logActivity_(spreadsheet, props, leadId, event, status, duration, attempt, errorCode, errorMessage) {
+  ensureActivitySheet_(spreadsheet, props).appendRow([Utilities.getUuid(), leadId, event, status, new Date().toISOString(), Number(duration || 0), Number(attempt || 0), String(errorCode || ""), String(errorMessage || "").slice(0, 160)]);
 }
 
 function sendFounderLeadEmail_(job, props) {
@@ -790,6 +957,34 @@ function assertHeaders_(sheet) {
       "Trial Leads headers do not match. Run migrateTrialLeadsSheet first."
     );
   }
+}
+
+function ensureOperationalHeaders_(sheet) {
+  var lastColumn = Math.max(sheet.getLastColumn(), TRIAL_HEADERS.length);
+  var headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0];
+  OPERATIONAL_HEADERS.forEach(function (header) {
+    if (headers.indexOf(header) < 0) {
+      sheet.getRange(1, headers.length + 1).setValue(header);
+      headers.push(header);
+    }
+  });
+  return headerMap_(headers);
+}
+
+function ensureActivitySheet_(spreadsheet, props) {
+  var name = props.getProperty("ACTIVITY_LOG_SHEET_NAME") || ACTIVITY_SHEET_DEFAULT;
+  var sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
+  if (sheet.getLastRow() === 0) sheet.getRange(1, 1, 1, ACTIVITY_HEADERS.length).setValues([ACTIVITY_HEADERS]);
+  var current = sheet.getRange(1, 1, 1, ACTIVITY_HEADERS.length).getDisplayValues()[0];
+  if (current.join("|") !== ACTIVITY_HEADERS.join("|")) throw new Error("ACTIVITY_LOG_HEADERS_INVALID");
+  sheet.setFrozenRows(1);
+  return sheet;
+}
+
+function headerMap_(headers) {
+  var map = {};
+  headers.forEach(function (header, index) { if (header) map[header] = index; });
+  return map;
 }
 
 function requiredProperty_(props, key) {
@@ -907,3 +1102,45 @@ function json_(status, ok, code, message, fieldErrors, leadId) {
   return ContentService.createTextOutput(JSON.stringify(response))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+// Phase 1 notification presentation overrides. Kept at the end so deployments
+// upgraded from the original script retain the webhook and validation contract.
+function sendFounderLeadEmail_(lead, props) {
+  var founderEmail = requiredProperty_(props, "FOUNDER_EMAIL");
+  var replyTo = props.getProperty("REPLY_TO_EMAIL") || "tajweedscholar@gmail.com";
+  var view = presentationValues_(lead);
+  var wa = buildWhatsAppUrl_(lead.whatsapp, "Assalamu alaikum, this is Muneeb from Tajweed Scholars. We received your request for three free trial classes.");
+  var rows = [["Lead reference", lead.leadId], ["Learner", view.learner], ["Age group", view.ageGroup], ["Name", lead.contactName], ["Guardian", view.guardian], ["Goal", view.goal], ["Country", lead.countryName + " (" + lead.countryCode + ")"], ["Region", view.region], ["Time zone", lead.timeZone], ["Preferred days", view.preferredDays], ["Preferred time", view.preferredTime], ["Notes", view.notes], ["Received", String(lead.receivedAt || "")]];
+  var plain = rows.map(function (row) { return row[0] + ": " + row[1]; }).join("\n") + "\n\nOpen CRM: " + lead.spreadsheetUrl;
+  var table = rows.map(function (row) { return '<tr><td style="padding:8px;border-bottom:1px solid #e7e5e4;font-weight:700">' + htmlEscape_(row[0]) + '</td><td style="padding:8px;border-bottom:1px solid #e7e5e4">' + htmlEscape_(row[1]) + "</td></tr>"; }).join("");
+  var actions = '<div style="margin-top:24px"><a style="' + buttonStyle_("#166534") + '" href="' + htmlEscape_(wa) + '">Message on WhatsApp</a><a style="' + buttonStyle_("#44403c") + '" href="mailto:' + htmlEscape_(lead.email) + '">Reply by Email</a><a style="' + buttonStyle_("#92400e") + '" href="' + htmlEscape_(lead.spreadsheetUrl) + '">Open CRM</a></div>';
+  MailApp.sendEmail({ to: founderEmail, subject: founderEmailSubject_(lead.leadId), body: plain, htmlBody: emailShell_("New trial lead", '<p>A new trial request needs admissions follow-up.</p><table style="width:100%;border-collapse:collapse">' + table + "</table>" + actions), name: "Tajweed Scholars", replyTo: replyTo });
+}
+
+function sendSubmitterAcknowledgement_(lead, props) {
+  var replyTo = props.getProperty("REPLY_TO_EMAIL") || "tajweedscholar@gmail.com";
+  var businessNumber = props.getProperty("WHATSAPP_BUSINESS_NUMBER") || "";
+  var wa = buildWhatsAppUrl_(businessNumber, "Assalamu alaikum, I have a question about my Tajweed Scholars trial request.");
+  var view = presentationValues_(lead);
+  var plain = "Assalamu alaikum " + lead.contactName + ",\n\nThank you for requesting three free trial classes.\n\nWhat happens next:\n1. We review your learning goal and preferred timings.\n2. We contact you through WhatsApp or email.\n3. We arrange your first trial lesson.\n\nLearner: " + view.learner + "\nAge group: " + view.ageGroup + "\nMain goal: " + view.goal + "\nPreferred days: " + view.preferredDays + "\nPreferred time: " + view.preferredTime + "\nTime zone: " + lead.timeZone + "\nReference: " + lead.leadId + "\n\nNo payment information is required.\n\nTajweed Scholars\nLive private one-to-one Quran classes\n" + replyTo + "\n" + businessNumber;
+  var summary = '<table style="width:100%;border-collapse:collapse"><tr><td><strong>Learner</strong></td><td>' + htmlEscape_(view.learner) + '</td></tr><tr><td><strong>Age group</strong></td><td>' + htmlEscape_(view.ageGroup) + '</td></tr><tr><td><strong>Main goal</strong></td><td>' + htmlEscape_(view.goal) + '</td></tr><tr><td><strong>Preferred days</strong></td><td>' + htmlEscape_(view.preferredDays) + '</td></tr><tr><td><strong>Preferred time</strong></td><td>' + htmlEscape_(view.preferredTime) + '</td></tr><tr><td><strong>Time zone</strong></td><td>' + htmlEscape_(lead.timeZone) + '</td></tr><tr><td><strong>Reference</strong></td><td>' + htmlEscape_(lead.leadId) + "</td></tr></table>";
+  var content = '<p>Assalamu alaikum ' + htmlEscape_(lead.contactName) + ',</p><p>Thank you for requesting three free trial classes.</p><h2 style="font-size:18px">What happens next</h2><ol><li>We review your learning goal and preferred timings.</li><li>We contact you through WhatsApp or email.</li><li>We arrange your first trial lesson.</li></ol>' + summary + '<p><strong>No payment information is required.</strong></p>' + (wa ? '<p><a style="' + buttonStyle_("#166534") + '" href="' + htmlEscape_(wa) + '">Message Tajweed Scholars</a></p>' : "");
+  MailApp.sendEmail({ to: lead.email, subject: userEmailSubject_(), body: plain, htmlBody: emailShell_("Request received", content), name: "Tajweed Scholars", replyTo: replyTo });
+}
+
+function htmlEscape_(value) { return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+function presentationValues_(lead) {
+  var age = canonicalAgeGroup_(lead.ageGroup);
+  var goals = { qaida: "Start with Qaida", "quran-reading": "Improve Quran reading", tajweed: "Improve Tajweed & pronunciation", hifz: "Hifz / Quran memorization", unsure: "Not sure \u2014 help me choose" };
+  var times = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
+  var ages = { "4-6": "4\u20136", "7-9": "7\u20139", "10-12": "10\u201312", "13-15": "13\u201315", "16-17": "16\u201317", adult: "Adult" };
+  var learner = lead.learnerType === "child" ? "Child learner" : age === "adult" ? "Adult learner" : "Learner";
+  return { region: lead.region || "Not provided", notes: lead.notes || "Not provided", guardian: age === "adult" ? "Not applicable \u2014 adult learner" : lead.guardianName, learner: learner, ageGroup: ages[age], goal: goals[lead.mainGoal] || String(lead.mainGoal || ""), preferredDays: (lead.preferredDays || []).map(function (day) { return String(day).charAt(0).toUpperCase() + String(day).slice(1); }).join(", "), preferredTime: times[lead.preferredTime] || String(lead.preferredTime || ""), error: null };
+}
+function buildWhatsAppUrl_(number, message) { var digits = String(number || "").replace(/\D/g, ""); return digits ? "https://wa.me/" + digits + "?text=" + encodeURIComponent(String(message || "")) : ""; }
+function founderEmailSubject_(leadId) { return "[ACTION REQUIRED] New Trial Lead \u2014 " + String(leadId); }
+function userEmailSubject_() { return "We received your Tajweed Scholars trial request"; }
+function buttonStyle_(color) { return "display:inline-block;margin:4px;padding:12px 16px;border-radius:6px;background:" + color + ";color:#fff;text-decoration:none;font-weight:700"; }
+function emailShell_(title, content) { return '<div style="background:#f5f1e8;padding:24px;font-family:Arial,sans-serif;color:#292524"><div style="max-width:640px;margin:auto;background:#fff;border:1px solid #e7e5e4;border-radius:10px;overflow:hidden"><div style="background:#163d2b;color:#fff;padding:20px"><div style="font-family:Georgia,serif;font-size:24px">Tajweed Scholars</div><div>' + htmlEscape_(title) + '</div></div><div style="padding:24px;line-height:1.6">' + content + '</div><div style="padding:18px 24px;background:#fafaf9;color:#57534e;font-size:13px">Tajweed Scholars<br>Live private one-to-one Quran classes<br>tajweedscholar@gmail.com</div></div></div>'; }
+function safeErrorCode_(error) { return String(error && (error.code || error.name) || "NOTIFICATION_ERROR").replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 60); }
+function safeErrorMessage_(error) { return safeErrorCode_(error); }
