@@ -1,0 +1,21 @@
+ api/trial-leads.test.ts                    |   7 [32m+[m
+ api/trial-leads.ts                         |   5 [32m+[m[31m-[m
+ package-lock.json                          | 485 [32m+++++++++++++++++++++++++++++[m
+ package.json                               |   2 [32m+[m
+ src/components/PhoneCountrySelect.test.tsx |  26 [32m++[m
+ src/components/PhoneCountrySelect.tsx      |  27 [32m++[m
+ src/components/SearchCombobox.test.tsx     |  33 [32m++[m
+ src/components/SearchCombobox.tsx          |  38 [32m+++[m
+ src/components/TrialFaqAccordion.test.tsx  |  18 [32m++[m
+ src/components/TrialFaqAccordion.tsx       |  13 [32m+[m
+ src/components/TrialForm.tsx               |  69 [32m++[m[31m--[m
+ src/components/TrialProgress.test.tsx      |  19 [32m++[m
+ src/components/WhatsAppCta.test.tsx        |  43 [32m+++[m
+ src/components/WhatsAppCta.tsx             |  10 [32m+[m
+ src/index.css                              |   8 [32m+[m
+ src/lib/trialUx.test.ts                    |  82 [32m+++++[m
+ src/lib/trialUx.ts                         | 157 [32m++++++++++[m
+ src/pages/FreeTrial.tsx                    |  19 [32m+[m[31m-[m
+ src/shared/trialOptions.ts                 |   2 [32m+[m[31m-[m
+ vite.config.ts                             |   4 [32m+[m[31m-[m
+ 20 files changed, 1035 insertions(+), 32 deletions(-)
