@@ -1,11 +1,18 @@
 import assert from "node:assert/strict";
 import { normalizeTrialPayload, parseAppsScriptResponse, requestAppsScript, UpstreamError, validateAppsScriptUrl, validateTrialPayload, type RequestOnce } from "./trial-leads.ts";
+import { newSubmissionMeta, timeZoneLabel } from "../src/lib/trialUx.ts";
 
 const base = { learnerType: "self", ageGroup: "adult", mainGoal: "tajweed", contactName: "Test Learner", guardianName: "", countryCode: "PK", countryName: "Pakistan", region: "", timeZone: "Asia/Karachi", whatsapp: "+923001234567", email: "learner@example.com", preferredDays: ["monday"], preferredTime: "evening", notes: "", consent: true, submissionId: "test-submission", honeypot: "", formStartedAt: Date.now() - 5000 };
 const displayPayload = { ...base, learnerType: "My child", ageGroup: "7–9", mainGoal: "Learn Qaida", guardianName: "Parent Name", region: "Punjab", whatsapp: "+923246608501", preferredDays: ["Monday", "Wednesday"], preferredTime: "Evening" };
 const normalized = normalizeTrialPayload(displayPayload) as Record<string, unknown>;
 assert.deepEqual({ learnerType: normalized.learnerType, ageGroup: normalized.ageGroup, mainGoal: normalized.mainGoal, preferredDays: normalized.preferredDays, preferredTime: normalized.preferredTime }, { learnerType: "child", ageGroup: "7-9", mainGoal: "qaida", preferredDays: ["monday", "wednesday"], preferredTime: "evening" });
 const validated = validateTrialPayload(normalized); assert.deepEqual(validated.fieldErrors, {}); assert.ok(validated.payload);
+assert.deepEqual(validateTrialPayload({ ...base, countryCode: "GB", countryName: "United Kingdom", whatsapp: "+923001234567" }).fieldErrors, {});
+assert.deepEqual(validateTrialPayload({ ...base, whatsapp: "+447911123456" }).fieldErrors, {});
+assert.ok(validateTrialPayload({ ...base, whatsapp: "+123" }).fieldErrors.whatsapp);
+assert.equal(timeZoneLabel(base.timeZone), "Pakistan Time (UTC+05:00)");
+assert.equal(validateTrialPayload({ ...base, timeZone: "America/New_York" }).payload?.timeZone, "America/New_York");
+assert.notEqual(newSubmissionMeta().submissionId, newSubmissionMeta().submissionId);
 
 const execUrl = "https://script.google.com/macros/s/test-deployment/exec";
 let calls: Array<{ hostname: string; method: string; body?: string }> = [];

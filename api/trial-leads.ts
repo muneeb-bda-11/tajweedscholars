@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import https from "node:https";
 import { URL } from "node:url";
-import { getCountries, isPossiblePhoneNumber, parsePhoneNumber } from "react-phone-number-input";
+import { getCountries, isPossiblePhoneNumber } from "react-phone-number-input";
 import type { TrialSubmissionPayload } from "../src/lib/trialSubmission";
 import { CANONICAL_VALUES, UNDER_18_AGE_GROUPS } from "../src/shared/trialOptions.js";
 
@@ -46,8 +46,7 @@ export function validateTrialPayload(value: unknown): { payload?: TrialSubmissio
   if (!text(body.countryName, 100)) errors.countryName = "Choose a valid country.";
   if (!text(body.region, 100, false)) errors.region = "State / Province / Region must be 100 characters or fewer.";
   if (!validZone(body.timeZone)) errors.timeZone = "Enter a valid IANA time zone.";
-  if (typeof body.whatsapp !== "string" || !body.whatsapp.startsWith("+") || !isPossiblePhoneNumber(body.whatsapp)) errors.whatsapp = "Enter a possible international phone number.";
-  else if (parsePhoneNumber(body.whatsapp)?.country !== body.countryCode) errors.whatsapp = "The phone number country must match the selected country.";
+  if (typeof body.whatsapp !== "string" || !body.whatsapp.startsWith("+") || body.whatsapp.length > 16 || !isPossiblePhoneNumber(body.whatsapp)) errors.whatsapp = "Enter a possible international phone number.";
   const normalizedEmail = typeof body.email === "string" ? body.email.trim().toLowerCase() : ""; if (!validEmail(normalizedEmail)) errors.email = "Enter a valid email address.";
   if (!Array.isArray(body.preferredDays) || !body.preferredDays.length || body.preferredDays.length > 7 || new Set(body.preferredDays).size !== body.preferredDays.length || body.preferredDays.some((day) => !CANONICAL_VALUES.preferredDays.includes(day as never))) errors.preferredDays = "Choose valid preferred days.";
   if (!CANONICAL_VALUES.preferredTime.includes(body.preferredTime as never)) errors.preferredTime = "Choose a valid preferred time.";

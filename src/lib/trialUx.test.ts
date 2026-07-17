@@ -1,0 +1,82 @@
+import assert from "node:assert/strict";
+import { addRecentIdentifier, clearSessionIdentifiers, detectInitialCountry, getNationalPhonePlaceholder, getPhonePatternPlaceholder, getTimeZoneValues, groupTimeZones, learnerNameLabel, normalizePhoneEntry, orderCountries, readSessionIdentifiers, regionField, resolveDeviceDefaults, submittedGuardianName, timeZoneLabel, timeZoneSearchText, writeSessionIdentifiers } from "./trialUx.ts";
+import { getCountries, type Country } from "react-phone-number-input";
+import countryLabels from "react-phone-number-input/locale/en";
+
+assert.equal(getPhonePatternPlaceholder("PK"), "+92 3XX XXXXXXX");
+assert.equal(getPhonePatternPlaceholder("GB"), "+44 7XXX XXXXXX");
+assert.equal(getPhonePatternPlaceholder("US"), "+1 (XXX) XXX-XXXX");
+assert.equal(getPhonePatternPlaceholder("AU"), "+61 4XX XXX XXX");
+assert.equal(getPhonePatternPlaceholder("AE"), "+971 5X XXX XXXX");
+assert.equal(getPhonePatternPlaceholder("AF"), "+93 7X XXX XXXX");
+assert.equal(getNationalPhonePlaceholder("PK"), "3XX XXXXXXX");
+assert.equal(getNationalPhonePlaceholder("US"), "(XXX) XXX-XXXX");
+assert.deepEqual(normalizePhoneEntry("3246608501", "PK"), { e164: "+923246608501", national: "324 6608501", country: "PK" });
+assert.deepEqual(normalizePhoneEntry("+447400123456", "PK"), { e164: "+447400123456", national: "7400 123456", country: "GB" });
+assert.equal(detectInitialCountry(["ur-PK"], "Asia/Karachi"), "PK");
+assert.equal(detectInitialCountry(["en-US"], "Asia/Karachi"), "PK");
+assert.equal(detectInitialCountry(["en-GB"], "Asia/Karachi"), "PK");
+assert.equal(detectInitialCountry(["en-GB"], "Etc/Unknown"), "GB");
+assert.equal(detectInitialCountry(["en"], "Asia/Karachi"), "PK");
+assert.equal(detectInitialCountry([], "Asia/Karachi"), "PK");
+assert.equal(detectInitialCountry([], "Etc/Unknown"), undefined);
+
+assert.equal(learnerNameLabel("child"), "Learner’s name *");
+assert.equal(learnerNameLabel("self"), "Your name *");
+assert.equal(submittedGuardianName("self", "Must be cleared"), "");
+assert.equal(submittedGuardianName("child", " Parent "), "Parent");
+
+const allCountries = getCountries().map((code) => ({ code, name: countryLabels[code] }));
+const ordered = orderCountries(allCountries, "PK");
+assert.equal(ordered.length, 245);
+assert.equal(new Set(ordered.map(({ code }) => code)).size, 245);
+assert.deepEqual(ordered.slice(0, 6).map(({ code }) => code), ["PK", "US", "GB", "CA", "AU", "AE"]);
+assert.equal(ordered[0].group, "Recommended");
+assert.equal(ordered.find(({ code }) => code === "US")?.group, "Popular");
+assert.ok(ordered.some(({ code }) => code === "AC" as Country));
+
+const fallbackZones = getTimeZoneValues(undefined);
+assert.equal(fallbackZones.length, 418);
+assert.equal(new Set(fallbackZones).size, fallbackZones.length);
+assert.ok(fallbackZones.includes("Asia/Karachi"));
+const groupedZones = groupTimeZones(fallbackZones, "Asia/Karachi", "PK");
+assert.equal(groupedZones[0].group, "Recommended");
+assert.equal(groupedZones[0].value, "Asia/Karachi");
+assert.equal(timeZoneLabel(groupedZones[0].value, new Date("2026-01-01T00:00:00Z")), "Pakistan Time (UTC+05:00)");
+assert.match(timeZoneSearchText("Asia/Karachi"), /Lahore/);
+assert.match(timeZoneSearchText("Asia/Karachi"), /Islamabad/);
+const lahoreResult = groupedZones.find((option) => `${option.label} ${option.value} ${option.search}`.toLowerCase().includes("lahore"));
+const islamabadResult = groupedZones.find((option) => `${option.label} ${option.value} ${option.search}`.toLowerCase().includes("islamabad"));
+assert.equal(lahoreResult?.value, "Asia/Karachi");
+assert.equal(islamabadResult?.value, "Asia/Karachi");
+assert.equal(lahoreResult?.label, "Pakistan Time (UTC+05:00)");
+const renoResult = groupedZones.find((option) => `${option.label} ${option.value} ${option.search}`.toLowerCase().includes("reno"));
+assert.equal(renoResult?.value, "America/Los_Angeles");
+assert.match(renoResult?.label || "", /^Pacific Time — Los Angeles \(UTC[−+]0[78]:00\)$/);
+assert.equal(new Set(groupedZones.map(({ value }) => value)).size, groupedZones.length);
+assert.equal(groupedZones.length, fallbackZones.length);
+assert.doesNotMatch(groupedZones.map(({ group }) => group).join(" "), /Detected|Suggested from your device/);
+assert.deepEqual(resolveDeviceDefaults(["en-US"], "Asia/Karachi"), { timeZone: "Asia/Karachi", country: "PK", phoneCountry: "PK" });
+const recentDoesNotOverride = orderCountries(allCountries, "PK", ["US"]);
+assert.equal(recentDoesNotOverride[0].code, "PK");
+assert.equal(recentDoesNotOverride[0].group, "Recommended");
+
+assert.deepEqual(regionField("US"), { label: "State (optional)", placeholder: "e.g., California" });
+assert.deepEqual(regionField("CA"), { label: "Province or territory (optional)", placeholder: "e.g., Ontario" });
+assert.deepEqual(regionField("AU"), { label: "State or territory (optional)", placeholder: "e.g., Victoria" });
+assert.deepEqual(regionField("PK"), { label: "Province or region (optional)", placeholder: "e.g., Punjab" });
+assert.deepEqual(regionField("GB"), { label: "County or region (optional)", placeholder: "e.g., Greater London" });
+assert.deepEqual(regionField("AE"), { label: "State / Province / Region (optional)", placeholder: "" });
+
+const allowed = new Set(["PK", "US", "GB"]);
+assert.deepEqual(addRecentIdentifier(["US", "GB"], "PK", allowed), ["PK", "US", "GB"]);
+assert.deepEqual(addRecentIdentifier(["PK", "US", "GB"], "US", allowed), ["US", "PK", "GB"]);
+const storage = new Map<string, string>();
+Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: { getItem: (key: string) => storage.get(key) || null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) } });
+writeSessionIdentifiers("recent", ["PK", "email@example.com", "US"], allowed);
+assert.deepEqual(readSessionIdentifiers("recent", allowed), ["PK", "US"]);
+assert.equal(storage.get("recent"), '["PK","US"]');
+clearSessionIdentifiers("recent");
+assert.equal(storage.has("recent"), false);
+
+console.log("phone pattern placeholder tests passed");
