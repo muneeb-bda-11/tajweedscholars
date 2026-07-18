@@ -13,7 +13,7 @@ export const HeroLessonVisual: React.FC = () => {
     <div className="relative mx-auto aspect-[16/10] w-full max-w-[34rem] sm:h-[300px] sm:aspect-auto lg:h-[390px]" role="img" aria-label="A live private Quran lesson between a teacher and learner">
       <div className="absolute inset-2 overflow-hidden rounded-[2rem_.85rem_2rem_.85rem] border border-stone-200 bg-emerald-50 shadow-sm">
         {imageAvailable ? (
-          <img src="/brand/hero-online-quran-class.webp" alt="A Quran teacher guiding a learner in a live private online class" className="h-full w-full object-cover object-[50%_25%]" onError={() => setImageAvailable(false)} />
+          <img src="/brand/hero-online-quran-class.webp" width="1200" height="750" alt="A Quran teacher guiding a learner in a live private online class" decoding="async" fetchPriority="high" sizes="(max-width: 640px) calc(100vw - 48px), 544px" className="h-full w-full object-cover object-[50%_25%]" onError={() => setImageAvailable(false)} />
         ) : (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
             <div className="flex items-end gap-4 text-emerald-800" aria-hidden="true">

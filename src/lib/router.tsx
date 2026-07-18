@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { PUBLIC_ROUTES } from "../config/metadata";
+import { prefetchRoute } from "./routeModules";
 
 interface RouterContextType { path: string; navigate: (to: string) => void; }
 interface BrowserLocation { pathname: string; search: string; hash: string; }
@@ -57,14 +58,16 @@ export const Route: React.FC<RouteProps> = ({ path: routePath, element }) => {
 };
 
 interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> { to: string; children: React.ReactNode; activeClassName?: string; }
-export const Link: React.FC<LinkProps> = ({ to, children, className, activeClassName = "active-route", ...props }) => {
+export const Link: React.FC<LinkProps> = ({ to, children, className, activeClassName = "active-route", onClick, onPointerEnter, onFocus, ...props }) => {
   const { path, navigate } = useRouter();
   const targetPath = isInternalRoute(to) ? new URL(to, window.location.origin).pathname : to;
   const isActive = path === targetPath || (targetPath !== "/" && path.startsWith(targetPath));
   const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(event);
+    if (event.defaultPrevented) return;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     navigate(to);
   };
-  return <a href={to} onClick={handleClick} className={`${className || ""} ${isActive ? activeClassName : ""}`} {...props}>{children}</a>;
+  return <a href={to} onClick={handleClick} onPointerEnter={(event) => { if (event.pointerType === "mouse") prefetchRoute(to); onPointerEnter?.(event); }} onFocus={(event) => { prefetchRoute(to); onFocus?.(event); }} className={`${className || ""} ${isActive ? activeClassName : ""}`} {...props}>{children}</a>;
 };
