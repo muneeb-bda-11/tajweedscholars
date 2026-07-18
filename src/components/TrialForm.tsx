@@ -19,7 +19,7 @@ const RECENT_COUNTRIES_KEY = "tajweed-trial-recent-countries", RECENT_ZONES_KEY 
 const emailSuggestion = (email: string) => { const domain = email.toLowerCase().split("@")[1]; if (!domain) return ""; const typo: Record<string, string> = { "gmial.com": "gmail.com", "gamil.com": "gmail.com", "gmail.con": "gmail.com", "hotnail.com": "hotmail.com", "outlok.com": "outlook.com", "yaho.com": "yahoo.com" }; return typo[domain] || ""; };
 
 function safePrefill(): Partial<FormData> {
-  const query = window.location.hash.split("?")[1]; if (!query) return {}; const p = new URLSearchParams(query); const result: Partial<FormData> = {};
+  const query = window.location.search; if (!query) return {}; const p = new URLSearchParams(query); const result: Partial<FormData> = {};
   const learners: Record<string, LearnerType> = { "My Child": "child", "My child": "child", Myself: "self", child: "child", self: "self" };
   const ages: Record<string, AgeGroup> = { "4–5": "4-6", "4–6": "4-6", "4-6": "4-6", "6–8": "7-9", "7–9": "7-9", "7-9": "7-9", "9–12": "10-12", "10–12": "10-12", "10-12": "10-12", "13–15": "13-15", "13-15": "13-15", "16–17": "16-17", "16-17": "16-17", Adult: "adult", adult: "adult" };
   const goals: Record<string, MainGoal> = { qaida:"qaida", "quran-reading":"quran-reading", tajweed:"tajweed", hifz:"hifz", unsure:"unsure", "Learn from the beginning": "qaida", "Learn Qaida": "qaida", "Improve Quran reading": "quran-reading", "Improve Tajweed": "tajweed", "Tajweed correction": "tajweed", "Memorize Quran": "hifz", Hifz: "hifz", "Not sure yet": "unsure" };
