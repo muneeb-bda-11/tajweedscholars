@@ -12,7 +12,7 @@ export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Hash format: '#/' or '#/free-trial'
   const [path, setPath] = useState<string>(() => {
     const hash = window.location.hash;
-    if (!hash) return "/";
+    if (!hash) return window.location.pathname || "/";
     return hash.replace(/^#/, "") || "/";
   });
 
@@ -34,9 +34,9 @@ export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     window.addEventListener("hashchange", handleHashChange);
     
-    // If no initial hash, set it to home
+    // Preserve a directly requested public pathname while retaining hash navigation.
     if (!window.location.hash) {
-      window.location.hash = "/";
+      window.location.hash = window.location.pathname || "/";
     }
 
     return () => {
@@ -68,7 +68,7 @@ export const Route: React.FC<RouteProps> = ({ path: routePath, element }) => {
   const { path } = useRouter();
   
   // Exact match or sub-route prefix match depending on depth
-  const isMatch = path === routePath || (routePath !== "/" && path.startsWith(routePath));
+  const isMatch = routePath === "*" || path === routePath;
   
   if (isMatch) {
     return <>{element}</>;

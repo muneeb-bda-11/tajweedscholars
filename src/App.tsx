@@ -14,11 +14,13 @@ import { Contact } from "./pages/Contact";
 import { ProgramPage } from "./pages/ProgramPage";
 import { About } from "./pages/About";
 import { WhyChooseUs } from "./pages/WhyChooseUs";
-import { PolicyUnavailable } from "./pages/PolicyUnavailable";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { Programs } from "./pages/Programs";
 import { ProgramFinderProvider } from "./components/ProgramFinder";
 import { MobileTrialBar } from "./components/home/MobileTrialBar";
+import { PolicyPage } from "./pages/PolicyPage";
+import { NotFoundRoute } from "./pages/NotFound";
+import { PageMetadata } from "./components/PageMetadata";
 
 export default function App() {
   return (
@@ -47,11 +49,17 @@ export default function App() {
           <Route path="/why-choose-us" element={<WhyChooseUs />} />
 
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-and-conditions" element={<PolicyUnavailable />} />
-          <Route path="/payment-policy" element={<PolicyUnavailable />} />
-          <Route path="/refund-policy" element={<PolicyUnavailable />} />
-          <Route path="/reschedule-policy" element={<PolicyUnavailable />} />
+          <Route path="/terms-and-conditions" element={<PolicyPage />} />
+          <Route path="/payment-policy" element={<PolicyPage />} />
+          <Route path="/refund-policy" element={<PolicyPage />} />
+          <Route path="/reschedule-policy" element={<PolicyPage />} />
+          <Route path="/child-safeguarding" element={<PolicyPage />} />
+          <Route path="/recording-policy" element={<PolicyPage />} />
+          <Route path="/complaints" element={<PolicyPage />} />
+          <Route path="/acceptable-use" element={<PolicyPage />} />
+          <NotFoundRoute />
         </main>
+        <PageMetadata />
 
         {/* Global Informative Academy Footer */}
         <Footer />
