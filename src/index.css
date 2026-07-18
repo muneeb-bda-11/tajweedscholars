@@ -10,6 +10,14 @@
   --color-border: #e5e7eb;
 }
 
+@media print {
+  #app-header, #app-footer, #mobile-trial-bar { display: none !important; }
+  .policy-print { padding: 0 !important; }
+  .policy-print section { break-inside: avoid; }
+  body { background: white !important; color: black !important; font-size: 11pt; }
+  a { color: black !important; text-decoration: underline; }
+}
+
 @theme {
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "Plus Jakarta Sans", "Segoe UI", sans-serif;

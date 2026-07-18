@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/programs", "destination": "/index.html" },
+    { "source": "/kids-quran-classes", "destination": "/index.html" },
+    { "source": "/adult-quran-classes", "destination": "/index.html" },
+    { "source": "/tajweed-course", "destination": "/index.html" },
+    { "source": "/hifz-program", "destination": "/index.html" },
+    { "source": "/arabic-language", "destination": "/index.html" },
+    { "source": "/islamic-studies", "destination": "/index.html" },
+    { "source": "/pricing", "destination": "/index.html" },
+    { "source": "/free-trial", "destination": "/index.html" },
+    { "source": "/about", "destination": "/index.html" },
+    { "source": "/why-choose-us", "destination": "/index.html" },
+    { "source": "/contact", "destination": "/index.html" },
+    { "source": "/privacy-policy", "destination": "/index.html" },
+    { "source": "/terms-and-conditions", "destination": "/index.html" },
+    { "source": "/payment-policy", "destination": "/index.html" },
+    { "source": "/refund-policy", "destination": "/index.html" },
+    { "source": "/reschedule-policy", "destination": "/index.html" },
+    { "source": "/child-safeguarding", "destination": "/index.html" },
+    { "source": "/recording-policy", "destination": "/index.html" },
+    { "source": "/complaints", "destination": "/index.html" },
+    { "source": "/acceptable-use", "destination": "/index.html" }
+  ]
+}

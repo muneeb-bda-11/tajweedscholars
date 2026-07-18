@@ -4,6 +4,7 @@ import { Icon } from "../components/Icon";
 import { Link, useRouter } from "../lib/router";
 import { PROGRAM_FAQS, PROGRAM_VISUALS } from "../config/pageContent";
 import { TrialFaqAccordion } from "../components/TrialFaqAccordion";
+import { SafeguardingSummary } from "../components/SafeguardingSummary";
 
 const audiences: Record<string, string> = {
   "kids-classes": "Children ages 4–15, from complete beginners to developing reciters.",
@@ -56,6 +57,7 @@ export const ProgramPage: React.FC = () => {
           </ul>
         </div>
 
+        {program.id === "kids-classes" && <SafeguardingSummary />}
         <section className="mx-auto mt-12 max-w-3xl"><h2 className="text-center text-2xl font-bold">Frequently asked questions</h2><TrialFaqAccordion faqs={PROGRAM_FAQS[program.id]} /></section><div className="mt-12 border-t border-stone-200 pt-10 text-center">
           <h2 className="font-display text-3xl font-bold text-stone-950">Find the right starting level</h2>
           <p className="mx-auto mt-3 max-w-2xl text-stone-600">Trial 1 includes placement and a real mini-lesson, followed by two further trial classes before an enrollment recommendation.</p>

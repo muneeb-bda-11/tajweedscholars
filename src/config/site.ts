@@ -403,7 +403,11 @@ export const NAVIGATION_LINKS = {
     { label: "Terms and Conditions", path: "/terms-and-conditions" },
     { label: "Payment Policy", path: "/payment-policy" },
     { label: "Refund Policy", path: "/refund-policy" },
-    { label: "Reschedule Policy", path: "/reschedule-policy" }
+    { label: "Reschedule & Make-Up Policy", path: "/reschedule-policy" },
+    { label: "Child Safeguarding Policy", path: "/child-safeguarding" },
+    { label: "Class Recording & Consent", path: "/recording-policy" },
+    { label: "Complaints Process", path: "/complaints" },
+    { label: "Acceptable Use Policy", path: "/acceptable-use" }
   ]
 };
 

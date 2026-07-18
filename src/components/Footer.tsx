@@ -15,7 +15,7 @@ export const Footer: React.FC = () => <footer id="app-footer" className="border-
       </div>
       <div><h2 className="text-sm font-bold text-white">Programs</h2><ul className="mt-2">{NAVIGATION_LINKS.programs.map(FooterLink)}</ul></div>
       <div><h2 className="text-sm font-bold text-white">Academy</h2><ul className="mt-2">{academy.map(FooterLink)}</ul></div>
-      <div><h2 className="text-sm font-bold text-white">Policies</h2><ul className="mt-2">{NAVIGATION_LINKS.policies.map((link) => <FooterLink key={link.path} path={link.path} label={policyLabels[link.path] || link.label}/>)}</ul></div>
+      <div><h2 className="text-sm font-bold text-white">Policies & Support</h2><ul className="mt-2 grid sm:grid-cols-2 lg:grid-cols-1">{NAVIGATION_LINKS.policies.map((link) => <FooterLink key={link.path} path={link.path} label={policyLabels[link.path] || link.label}/>)}</ul></div>
     </div><p className="pt-5 text-xs text-white/75">© {new Date().getFullYear()} Tajweed Scholars. All rights reserved.</p>
   </div>
 </footer>;
