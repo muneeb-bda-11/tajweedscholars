@@ -187,6 +187,13 @@
 .active-route {
   @apply !text-emerald-800;
 }
+.class-stage-progress { width: 0; animation: trial-autoplay-fill 5s linear forwards; }
+
+.footer-active-route {
+  @apply !text-white underline decoration-white/60 underline-offset-4;
+}
+
+section[aria-labelledby="journey-title"] .text-amber-800 { color: #277f68; }
 
 @media (prefers-reduced-motion: reduce) {
   html {

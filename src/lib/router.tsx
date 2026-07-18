@@ -80,9 +80,10 @@ export const Route: React.FC<RouteProps> = ({ path: routePath, element }) => {
 interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   to: string;
   children: React.ReactNode;
+  activeClassName?: string;
 }
 
-export const Link: React.FC<LinkProps> = ({ to, children, className, ...props }) => {
+export const Link: React.FC<LinkProps> = ({ to, children, className, activeClassName = "active-route", ...props }) => {
   const { path, navigate } = useRouter();
   
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -96,7 +97,7 @@ export const Link: React.FC<LinkProps> = ({ to, children, className, ...props })
     <a
       href={`#${to}`}
       onClick={handleClick}
-      className={`${className || ""} ${isActive ? "active-route" : ""}`}
+      className={`${className || ""} ${isActive ? activeClassName : ""}`}
       {...props}
     >
       {children}

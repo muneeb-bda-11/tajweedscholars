@@ -39,7 +39,6 @@ export function validateTrialPayload(value: unknown): { payload?: TrialSubmissio
   const errors: FieldErrors = {}; if (!value || typeof value !== "object" || Array.isArray(value)) return { fieldErrors: { form: "Invalid request body." } }; const body = value as Record<string, unknown>;
   if (!CANONICAL_VALUES.learnerType.includes(body.learnerType as never)) errors.learnerType = "Choose a valid learner type.";
   if (!CANONICAL_VALUES.ageGroup.includes(body.ageGroup as never)) errors.ageGroup = "Choose a valid age group.";
-  if (body.learnerType === "child" && body.ageGroup === "adult") errors.ageGroup = "Choose a valid age group.";
   if (!CANONICAL_VALUES.mainGoal.includes(body.mainGoal as never)) errors.mainGoal = "Choose a valid main goal.";
   if (!text(body.contactName, 120)) errors.contactName = "Enter the parent or learner name.";
   const guardianRequired = requiresGuardian(body.ageGroup); if (guardianRequired && !text(body.guardianName, 120)) errors.guardianName = "Enter a parent or guardian name."; else if (!text(body.guardianName, 120, false)) errors.guardianName = "Guardian name must be 120 characters or fewer.";

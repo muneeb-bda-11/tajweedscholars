@@ -1,4 +1,4 @@
-export const LEARNER_TYPE_OPTIONS = [{ value: "child", label: "My child" }, { value: "self", label: "Myself" }] as const;
+export const LEARNER_TYPE_OPTIONS = [{ value: "child", label: "My child / another learner" }, { value: "self", label: "Myself" }] as const;
 export const AGE_GROUP_OPTIONS = [{ value: "4-6", label: "4–6" }, { value: "7-9", label: "7–9" }, { value: "10-12", label: "10–12" }, { value: "13-15", label: "13–15" }, { value: "16-17", label: "16–17" }, { value: "adult", label: "Adult" }] as const;
 export const MAIN_GOAL_OPTIONS = [{ value: "qaida", label: "Start with Qaida" }, { value: "quran-reading", label: "Improve Quran reading" }, { value: "tajweed", label: "Improve Tajweed & pronunciation" }, { value: "hifz", label: "Hifz / Quran memorization" }, { value: "unsure", label: "Not sure — help me choose" }] as const;
 export const PREFERRED_DAY_OPTIONS = [{ value: "monday", label: "Monday" }, { value: "tuesday", label: "Tuesday" }, { value: "wednesday", label: "Wednesday" }, { value: "thursday", label: "Thursday" }, { value: "friday", label: "Friday" }, { value: "saturday", label: "Saturday" }, { value: "sunday", label: "Sunday" }] as const;

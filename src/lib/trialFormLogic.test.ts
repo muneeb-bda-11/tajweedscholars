@@ -23,9 +23,9 @@ assert.ok(validateTrialForm({ ...teenSelf, guardianName: "" }, 2).guardianName);
 
 // Learner changes, preservation, API-field routing, and Add another learner F-J.
 const changedToChild = withLearnerType(adult, "child");
-assert.equal(changedToChild.ageGroup, "");
+assert.equal(changedToChild.ageGroup, "adult");
 assert.equal(changedToChild.guardianName, "Hidden guardian");
-assert.ok(validateTrialForm(changedToChild, 1).ageGroup);
+assert.deepEqual(validateTrialForm(changedToChild, 1), {});
 assert.equal(buildTrialSubmissionPayload(adult, meta).guardianName, "");
 assert.equal(teenSelf.guardianName, " Parent ");
 assert.equal(stepForField("guardianName"), 2);
@@ -37,7 +37,8 @@ assert.notEqual(nextMeta.submissionId, meta.submissionId); assert.ok(nextMeta.fo
 // Complete client validation regression matrix.
 assert.ok(validateTrialForm({ ...base, learnerType: "" }, 1).learnerType);
 assert.ok(validateTrialForm({ ...base, ageGroup: "" }, 1).ageGroup);
-assert.ok(validateTrialForm({ ...base, learnerType: "child", ageGroup: "adult" }, 1).ageGroup);
+assert.deepEqual(validateTrialForm({ ...base, learnerType: "child", ageGroup: "adult" }, 1), {});
+assert.equal(buildTrialSubmissionPayload({ ...base, learnerType: "child", ageGroup: "adult" }, meta).learnerType, "child");
 assert.ok(validateTrialForm({ ...base, mainGoal: "" }, 1).mainGoal);
 assert.deepEqual(CANONICAL_VALUES.mainGoal, ["qaida", "quran-reading", "tajweed", "hifz", "unsure"]);
 assert.ok(validateTrialForm({ ...base, contactName: "" }, 2).contactName);
@@ -62,11 +63,18 @@ assert.equal(payload.honeypot, ""); assert.ok(typeof payload.formStartedAt === "
 
 const formSource = readFileSync(new URL("../components/TrialForm.tsx", import.meta.url), "utf8");
 assert.match(formSource, /if \(submitting\.current\) return/);
-assert.match(formSource, /aria-invalid=\{Boolean\(errors\.guardianName\)\}/);
+assert.match(formSource, /aria-invalid=\{Boolean\(visibleErrors\.guardianName\)\}/);
 assert.match(formSource, /aria-describedby=\{described\("guardianName"\)\}/);
 assert.match(formSource, /setStep\(stepForField\(first\)\)/);
 assert.match(formSource, /nextLearnerData\(value\)/);
 assert.match(formSource, /meta\.current = newSubmissionMeta\(\)/);
 assert.doesNotMatch(formSource, /phone number country must match/i);
+assert.match(formSource, /advanceCurrentStep/);
+assert.match(formSource, /submitFinalTrialRequest/);
+assert.match(formSource, /handleFormSubmit/);
+assert.match(formSource, /if \(step < 3\)/);
+assert.match(formSource, /validateTrialForm\(data, current\)/);
+assert.match(formSource, /getVisibleErrors/); assert.match(formSource, /attemptedSteps/); assert.match(formSource, /apiErrorFields/);
+assert.match(formSource, /if \(status === "error"\) \{ setStatus\("idle"\); setMessage\(""\); \}/);
 
 console.log("TrialForm guardian and complete client validation matrix passed");

@@ -23,11 +23,11 @@ assert.ok(page.indexOf('id="trial-form-container"') < page.indexOf('id="free-tri
 assert.ok(page.indexOf('id="free-trial-whatsapp-cta"') < page.indexOf('id="trial-summary-title"'));
 assert.ok(page.indexOf('id="trial-summary-title"') < page.indexOf('id="trial-faq-title"'));
 assert.doesNotMatch(page, /Can my WhatsApp number be from another country/);
-assert.match(page, /Can I book trials for more than one learner/);
+assert.match(page, /Can I book for more than one learner/);
 assert.match(cta, /For quick questions only\. Submit the form to request your three trial classes\./);
 assert.doesNotMatch(cta, /help before submitting/);
 const pageSource = readFileSync(new URL("../pages/FreeTrial.tsx", import.meta.url), "utf8");
-assert.ok(pageSource.indexOf("<TrialForm />") < pageSource.indexOf("<WhatsAppCta />"), "success and form states share the same section order");
+assert.ok(pageSource.indexOf("<TrialForm") < pageSource.indexOf("<WhatsAppCta"), "success and form states share the same section order");
 assert.doesNotMatch(pageSource, /(?:^|\s)(?:sm:|md:|lg:)?order-/m);
 const responsiveCss = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 assert.doesNotMatch(responsiveCss, /#registration-form-section[^}]*\b(?:display:\s*contents|order\s*:)/s);

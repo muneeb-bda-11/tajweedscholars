@@ -12,7 +12,8 @@ assert.ok(validateTrialPayload({ ...base, learnerType: "child", ageGroup: "7-9",
 assert.deepEqual(validateTrialPayload({ ...base, learnerType: "self", ageGroup: "adult", guardianName: "" }).fieldErrors, {});
 assert.equal(validateTrialPayload({ ...base, learnerType: "self", ageGroup: "adult", guardianName: "Ignored" }).payload?.guardianName, "");
 assert.equal(validateTrialPayload({ ...base, learnerType: "child", ageGroup: "7-9", guardianName: "  Parent  " }).payload?.guardianName, "Parent");
-assert.ok(validateTrialPayload({ ...base, learnerType: "child", ageGroup: "adult" }).fieldErrors.ageGroup);
+const adultChild = validateTrialPayload({ ...base, learnerType: "child", ageGroup: "adult", guardianName: "" });
+assert.ok(adultChild.payload); assert.equal(adultChild.payload?.learnerType, "child"); assert.equal(adultChild.payload?.contactName, "Test Learner"); assert.equal(adultChild.payload?.guardianName, "");
 assert.deepEqual(validateTrialPayload({ ...base, countryCode: "GB", countryName: "United Kingdom", whatsapp: "+923001234567" }).fieldErrors, {});
 assert.deepEqual(validateTrialPayload({ ...base, whatsapp: "+447911123456" }).fieldErrors, {});
 assert.ok(validateTrialPayload({ ...base, whatsapp: "+123" }).fieldErrors.whatsapp);

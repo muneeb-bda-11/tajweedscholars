@@ -14,7 +14,7 @@ export function validateTrialForm(data: TrialFormData, scope: 1 | 2 | 3 | "all")
   const errors: TrialErrors = {}, check = (step: number) => scope === "all" || scope === step;
   if (check(1)) {
     if (!CANONICAL_VALUES.learnerType.includes(data.learnerType as never)) errors.learnerType = "Choose who is learning.";
-    if (!CANONICAL_VALUES.ageGroup.includes(data.ageGroup as never) || (data.learnerType === "child" && data.ageGroup === "adult")) errors.ageGroup = "Choose a valid age group.";
+    if (!CANONICAL_VALUES.ageGroup.includes(data.ageGroup as never)) errors.ageGroup = "Choose a valid age group.";
     if (!CANONICAL_VALUES.mainGoal.includes(data.mainGoal as never)) errors.mainGoal = "Choose the main goal.";
   }
   if (check(2)) {
@@ -39,7 +39,16 @@ export function buildTrialSubmissionPayload(data: TrialFormData, meta: TrialSubm
   return { learnerType: data.learnerType as LearnerType, ageGroup: data.ageGroup as AgeGroup, mainGoal: data.mainGoal as MainGoal, contactName: data.contactName.trim(), guardianName: requiresGuardian(data.ageGroup) ? data.guardianName.trim() : "", countryCode: data.countryCode, countryName: data.countryName.trim(), region: data.region.trim(), timeZone: data.timeZone.trim(), whatsapp: data.whatsapp, email: data.email.trim().toLowerCase(), preferredDays: [...data.preferredDays], preferredTime: data.preferredTime as PreferredTime, notes: data.notes.trim(), consent: true, submissionId: meta.submissionId, honeypot: meta.honeypot, formStartedAt: meta.formStartedAt };
 }
 
-export const withLearnerType = (data: TrialFormData, learnerType: LearnerType): TrialFormData => ({ ...data, learnerType, ageGroup: learnerType === "child" && data.ageGroup === "adult" ? "" : data.ageGroup });
+export const withLearnerType = (data: TrialFormData, learnerType: LearnerType): TrialFormData => ({ ...data, learnerType });
+
+export type AttemptedSteps = Record<1 | 2 | 3, boolean>;
+export function getVisibleErrors(step: 1 | 2 | 3, errors: TrialErrors, attempted: AttemptedSteps, apiErrorFields: ReadonlySet<TrialField> = new Set()): TrialErrors {
+  const visible: TrialErrors = {};
+  for (const [field, message] of Object.entries(errors) as [TrialField, string][]) {
+    if (stepForField(field) === step && (attempted[step] || apiErrorFields.has(field))) visible[field] = message;
+  }
+  return visible;
+}
 export const nextLearnerData = (data: TrialFormData): TrialFormData => ({ learnerType: "", ageGroup: "", mainGoal: "", contactName: data.contactName, guardianName: data.guardianName, countryCode: data.countryCode, countryName: data.countryName, region: data.region, timeZone: data.timeZone, whatsapp: data.whatsapp, email: data.email, preferredDays: [], preferredTime: "", notes: "", consent: data.consent });
 
 export const stepForField = (field?: string): 1 | 2 | 3 => field && ["learnerType", "ageGroup", "mainGoal"].includes(field) ? 1 : field && ["contactName", "guardianName", "countryName", "region", "timeZone", "whatsapp", "email"].includes(field) ? 2 : 3;
