@@ -35,8 +35,9 @@ for (const preservedPath of [
 }
 
 const router = readFileSync(new URL("router.tsx", import.meta.url), "utf8");
-assert.match(router, /window\.location\.hash/);
+assert.match(router, /window\.history\.pushState/);
 assert.match(router, /window\.location\.pathname/);
-assert.match(router, /href={`#\${to}`}/);
+assert.match(router, /href={to}/);
+assert.doesNotMatch(router, /hashchange/);
 
-console.log("Vercel exact public-route fallbacks preserve API/static files and hash navigation");
+console.log("Vercel exact public-route fallbacks preserve API/static files and clean navigation");

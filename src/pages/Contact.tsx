@@ -35,7 +35,7 @@ export const Contact: React.FC = () => {
           <Link id="contact-trial-cta-card" to="/free-trial" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-stone-800 shadow-sm transition-colors hover:border-emerald-700">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10"><Icon name="Calendar" size={21} /></span>
             <h2 className="mt-5 text-xl font-bold">Book 3 Free Trial Classes</h2>
-            <p className="mt-2 text-sm leading-6 text-stone-200">Share the learner’s level, goals, availability, and contact details securely with admissions.</p>
+            <p className="mt-2 text-sm leading-6 text-stone-600">Share the learner’s level, goals, availability, and contact details securely with admissions.</p>
             <span className="mt-5 block text-sm font-bold text-emerald-800">Start the Free Trial form</span>
           </Link>
         </div>

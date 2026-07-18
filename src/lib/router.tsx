@@ -1,106 +1,70 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { PUBLIC_ROUTES } from "../config/metadata";
 
-interface RouterContextType {
-  path: string;
-  navigate: (to: string) => void;
-}
-
+interface RouterContextType { path: string; navigate: (to: string) => void; }
+interface BrowserLocation { pathname: string; search: string; hash: string; }
+export interface InitialRoute { path: string; replacement?: string; }
 const RouterContext = createContext<RouterContextType | undefined>(undefined);
 
+export const resolveInitialRoute = ({ pathname, search, hash }: BrowserLocation): InitialRoute => {
+  if (!hash.startsWith("#/")) return { path: pathname || "/" };
+  const legacyTarget = hash.slice(1);
+  if (legacyTarget.startsWith("//")) return { path: pathname || "/" };
+  const queryIndex = legacyTarget.indexOf("?");
+  const legacyPath = queryIndex >= 0 ? legacyTarget.slice(0, queryIndex) : legacyTarget;
+  if (!PUBLIC_ROUTES.includes(legacyPath)) return { path: pathname || "/" };
+  const legacySearch = queryIndex >= 0 ? legacyTarget.slice(queryIndex) : search;
+  return { path: legacyPath, replacement: `${legacyPath}${legacySearch}` };
+};
+
+export const isInternalRoute = (to: string) => to.startsWith("/") && !to.startsWith("//");
+
 export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // We use hash routing for absolute compatibility in container sandboxes and iframes.
-  // Hash format: '#/' or '#/free-trial'
-  const [path, setPath] = useState<string>(() => {
-    const hash = window.location.hash;
-    if (!hash) return window.location.pathname || "/";
-    return hash.replace(/^#/, "") || "/";
-  });
+  const [initialRoute] = useState(() => resolveInitialRoute({ pathname: window.location.pathname, search: window.location.search, hash: window.location.hash }));
+  const [path, setPath] = useState(initialRoute.path);
+
+  useEffect(() => {
+    if (initialRoute.replacement) window.history.replaceState(null, "", initialRoute.replacement);
+  }, [initialRoute]);
+
+  useEffect(() => {
+    const handlePopState = () => setPath(window.location.pathname || "/");
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const navigate = (to: string) => {
-    // Clean potential duplicate hashes
-    const cleanPath = to.startsWith("#") ? to.replace(/^#/, "") : to;
-    window.location.hash = cleanPath;
-    setPath(cleanPath);
+    if (!isInternalRoute(to)) return;
+    const target = new URL(to, window.location.origin);
+    window.history.pushState(null, "", `${target.pathname}${target.search}`);
+    setPath(target.pathname || "/");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash;
-      const currentPath = hash.replace(/^#/, "") || "/";
-      setPath(currentPath);
-      window.scrollTo({ top: 0, behavior: "instant" });
-    };
-
-    window.addEventListener("hashchange", handleHashChange);
-    
-    // Preserve a directly requested public pathname while retaining hash navigation.
-    if (!window.location.hash) {
-      window.location.hash = window.location.pathname || "/";
-    }
-
-    return () => {
-      window.removeEventListener("hashchange", handleHashChange);
-    };
-  }, []);
-
-  return (
-    <RouterContext.Provider value={{ path, navigate }}>
-      {children}
-    </RouterContext.Provider>
-  );
+  return <RouterContext.Provider value={{ path, navigate }}>{children}</RouterContext.Provider>;
 };
 
 export const useRouter = () => {
   const context = useContext(RouterContext);
-  if (!context) {
-    throw new Error("useRouter must be used within a RouterProvider");
-  }
+  if (!context) throw new Error("useRouter must be used within a RouterProvider");
   return context;
 };
 
-interface RouteProps {
-  path: string;
-  element: React.ReactNode;
-}
-
+interface RouteProps { path: string; element: React.ReactNode; }
 export const Route: React.FC<RouteProps> = ({ path: routePath, element }) => {
   const { path } = useRouter();
-  
-  // Exact match or sub-route prefix match depending on depth
-  const isMatch = routePath === "*" || path === routePath;
-  
-  if (isMatch) {
-    return <>{element}</>;
-  }
-  
-  return null;
+  return routePath === "*" || path === routePath ? <>{element}</> : null;
 };
 
-interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  to: string;
-  children: React.ReactNode;
-  activeClassName?: string;
-}
-
+interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> { to: string; children: React.ReactNode; activeClassName?: string; }
 export const Link: React.FC<LinkProps> = ({ to, children, className, activeClassName = "active-route", ...props }) => {
   const { path, navigate } = useRouter();
-  
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
+  const targetPath = isInternalRoute(to) ? new URL(to, window.location.origin).pathname : to;
+  const isActive = path === targetPath || (targetPath !== "/" && path.startsWith(targetPath));
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
     navigate(to);
   };
-  
-  const isActive = path === to || (to !== "/" && path.startsWith(to));
-
-  return (
-    <a
-      href={`#${to}`}
-      onClick={handleClick}
-      className={`${className || ""} ${isActive ? activeClassName : ""}`}
-      {...props}
-    >
-      {children}
-    </a>
-  );
+  return <a href={to} onClick={handleClick} className={`${className || ""} ${isActive ? activeClassName : ""}`} {...props}>{children}</a>;
 };
