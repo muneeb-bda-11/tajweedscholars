@@ -40,7 +40,8 @@ import {
   Facebook,
   Youtube,
   Music2,
-  Linkedin
+  Linkedin,
+  FileText
 } from "lucide-react";
 
 const iconMap = {
@@ -84,7 +85,8 @@ const iconMap = {
   Facebook,
   Youtube,
   Music2,
-  Linkedin
+  Linkedin,
+  FileText
 };
 
 export type IconName = keyof typeof iconMap;

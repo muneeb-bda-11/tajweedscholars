@@ -3,13 +3,14 @@ import { AudiencePathSelector } from "../components/home/AudiencePathSelector";
 import { ClassExperience } from "../components/home/ClassExperience";
 import { HeroLessonVisual } from "../components/home/HeroLessonVisual";
 import { LearningJourney } from "../components/home/LearningJourney";
-import { MobileTrialBar } from "../components/home/MobileTrialBar";
 import { SampleProgressUpdate } from "../components/home/SampleProgressUpdate";
 import { VisualTrialJourney } from "../components/home/VisualTrialJourney";
 import { useRouter } from "../lib/router";
+import { useProgramFinder } from "../components/ProgramFinder";
 
 export const Home: React.FC = () => {
   const { navigate } = useRouter();
+  const { openFinder } = useProgramFinder();
 
   useEffect(() => {
     document.title = "Online Quran Classes for Children & Adults | Tajweed Scholars";
@@ -32,9 +33,7 @@ export const Home: React.FC = () => {
               <button id="hero-primary-cta" type="button" onClick={() => navigate("/free-trial")} className="inline-flex min-h-[56px] flex-1 whitespace-nowrap items-center justify-center rounded-lg bg-emerald-800 px-4 text-sm font-bold text-white shadow-sm hover:bg-emerald-900 sm:flex-none sm:px-5">
                 Book 3 Free Trial Classes
               </button>
-              <a href="#audience-selector" className="inline-flex min-h-11 items-center justify-center rounded-lg px-3 text-sm font-bold text-emerald-800 hover:bg-emerald-50">
-                Find Your Program <span aria-hidden="true" className="ml-1">→</span>
-              </a>
+              <button type="button" onClick={(event) => openFinder(event.currentTarget)} className="inline-flex min-h-11 items-center justify-center rounded-lg px-3 text-sm font-bold text-emerald-800 hover:bg-emerald-50">Find My Program <span aria-hidden="true" className="ml-1">→</span></button>
             </div>
             <p className="mt-2 text-xs font-medium leading-5 text-stone-500">Takes about 2 minutes. No payment information required.</p>
           </div>
@@ -66,7 +65,6 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      <MobileTrialBar />
     </div>
   );
 };

@@ -15,12 +15,6 @@ export const SITE_CONFIG = {
   WHATSAPP_LINK: "https://wa.me/923246608501",
   SOCIAL_LINKS: { instagram: "", facebook: "", youtube: "", tiktok: "", linkedin: "" },
   
-  // App Setup
-  DEMO_MODE: true, // When true, validates form but doesn't transmit data
-  SHOW_EXACT_PRICES: false, // Hidden completely per guidelines
-  FORM_ENDPOINT: "", // Secure POST endpoint for form submissions
-  POLICY_PAGES_ENABLED: false, // Disabled by default
-  
   // Metadata & Countries Served
   countriesServed: ["United States", "United Kingdom", "Canada", "Australia"],
   timeZoneInfo: "Class timings are confirmed in each student's local time zone."
@@ -29,7 +23,6 @@ export const SITE_CONFIG = {
 // Explicit visibility helper flags derived from config
 export const HAS_WHATSAPP = !!SITE_CONFIG.WHATSAPP_NUMBER && !!SITE_CONFIG.WHATSAPP_LINK;
 export const HAS_CONTACT_EMAIL = !!SITE_CONFIG.CONTACT_EMAIL;
-export const HAS_FORM_ENDPOINT = !!SITE_CONFIG.FORM_ENDPOINT;
 
 export interface Program {
   id: string;
@@ -179,7 +172,7 @@ export const WHY_CHOOSE_US: FeatureSection[] = [
     id: "progress",
     title: "Progress You Can Actually See",
     boldText: "Families receive regular attendance notes, homework updates, teacher feedback, and clear next goals.",
-    description: "We bridge the gap between classroom and home. Parents receive transparent progress updates after lessons, outlining exactly what was studied, homework assignments, and upcoming milestones so you're always in the loop.",
+    description: "We bridge the gap between classroom and home through regular progress updates, attendance notes, homework updates, teacher feedback, and clear next goals.",
     icon: "LineChart"
   }
 ];
@@ -216,7 +209,6 @@ export interface PricingPlan {
   id: string;
   title: string;
   frequency: string;
-  priceValue: number; // Development/exact price
   features: string[];
   isPopular?: boolean;
 }
@@ -226,7 +218,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: "starter",
     title: "Starter Plan",
     frequency: "1 day per week",
-    priceValue: 40,
     features: [
       "Dedicated private teacher",
       "Live 1-to-1 classes through Zoom",
@@ -240,7 +231,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: "standard",
     title: "Standard Plan",
     frequency: "2 days per week",
-    priceValue: 50,
     isPopular: true,
     features: [
       "Recommended for most students",
@@ -256,7 +246,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: "growth",
     title: "Growth Plan",
     frequency: "3 days per week",
-    priceValue: 60,
     features: [
       "Dedicated private teacher",
       "Live 1-to-1 classes through Zoom",
@@ -270,7 +259,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: "strong-progress",
     title: "Strong Progress Plan",
     frequency: "4 days per week",
-    priceValue: 70,
     features: [
       "Dedicated private teacher",
       "Live 1-to-1 classes through Zoom",
@@ -284,7 +272,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: "intensive",
     title: "Intensive Plan",
     frequency: "5 days per week",
-    priceValue: 75,
     features: [
       "Dedicated private teacher",
       "Live 1-to-1 classes through Zoom",
@@ -298,7 +285,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: "weekend-1day",
     title: "Weekend 1-Day Plan",
     frequency: "Saturday or Sunday",
-    priceValue: 40,
     features: [
       "Dedicated private teacher",
       "Live 1-to-1 classes through Zoom",
@@ -312,7 +298,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: "weekend-2day",
     title: "Weekend 2-Day Plan",
     frequency: "Saturday and Sunday",
-    priceValue: 50,
     features: [
       "Dedicated private teacher",
       "Live 1-to-1 classes through Zoom",
@@ -397,6 +382,7 @@ export const FAQS: FAQ[] = [
 export const NAVIGATION_LINKS = {
   main: [
     { label: "Home", path: "/" },
+    { label: "Why Us", path: "/why-choose-us" },
     { label: "Pricing", path: "/pricing" },
     { label: "About", path: "/about" },
     { label: "Contact", path: "/contact" }
@@ -420,3 +406,13 @@ export const NAVIGATION_LINKS = {
     { label: "Reschedule Policy", path: "/reschedule-policy" }
   ]
 };
+
+export const PRICING = {
+  currencies: {
+    USD: { symbol: "$", rates: [40, 50, 60, 70, 80, 45, 55] },
+    GBP: { symbol: "£", rates: [30, 40, 45, 50, 60, 35, 45] },
+    CAD: { symbol: "C$", rates: [55, 70, 85, 100, 115, 65, 80] },
+    AUD: { symbol: "A$", rates: [60, 75, 90, 100, 115, 65, 80] }
+  },
+  localeCurrencies: { US: "USD", GB: "GBP", CA: "CAD", AU: "AUD" }
+} as const;

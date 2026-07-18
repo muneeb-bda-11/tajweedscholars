@@ -1,0 +1,51 @@
+warning: in the working copy of 'api/trial-leads.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/Footer.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/Header.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/Icon.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/PhoneCountrySelect.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/TrialForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/WhatsAppCta.test.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/home/AudiencePathSelector.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/home/ClassExperience.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/home/LearningJourney.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/home/MobileTrialBar.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/home/VisualTrialJourney.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/config/site.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/index.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/router.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/trialFormLogic.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/trialFormLogic.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/Contact.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/FreeTrial.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/Home.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/Pricing.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/shared/trialOptions.ts', LF will be replaced by CRLF the next time Git touches it
+ api/trial-leads.test.ts                      |   3 [32m+[m[31m-[m
+ api/trial-leads.ts                           |   1 [31m-[m
+ src/App.tsx                                  |  44 [32m+++[m[31m--[m
+ src/components/ContactForm.tsx               | 278 [31m---------------------------[m
+ src/components/Footer.tsx                    |  81 [32m++[m[31m------[m
+ src/components/FormStatusMessage.tsx         |  92 [31m---------[m
+ src/components/Header.tsx                    | 216 [32m+[m[31m--------------------[m
+ src/components/Icon.tsx                      |   6 [32m+[m[31m-[m
+ src/components/PhoneCountrySelect.tsx        |  31 [32m+[m[31m--[m
+ src/components/TrialForm.tsx                 |  32 [32m+[m[31m--[m
+ src/components/WhatsAppCta.test.tsx          |   4 [32m+[m[31m-[m
+ src/components/home/AudiencePathSelector.tsx |  79 [32m+[m[31m-------[m
+ src/components/home/ClassExperience.tsx      |  40 [32m+[m[31m---[m
+ src/components/home/LearningJourney.tsx      |   2 [32m+[m[31m-[m
+ src/components/home/MobileTrialBar.tsx       |  17 [32m+[m[31m-[m
+ src/components/home/VisualTrialJourney.tsx   |  76 [32m+[m[31m-------[m
+ src/config/site.ts                           |  28 [32m++[m[31m-[m
+ src/index.css                                |   7 [32m+[m
+ src/lib/router.tsx                           |   5 [32m+[m[31m-[m
+ src/lib/trialFormLogic.test.ts               |  16 [32m+[m[31m-[m
+ src/lib/trialFormLogic.ts                    |  13 [32m+[m[31m-[m
+ src/pages/Contact.tsx                        | 149 [32m++++[m[31m----------[m
+ src/pages/FreeTrial.tsx                      |  42 [32m+[m[31m---[m
+ src/pages/Home.tsx                           |   8 [32m+[m[31m-[m
+ src/pages/PlaceholderPage.tsx                | 116 [31m-----------[m
+ src/pages/Pricing.tsx                        | 175 [32m+++[m[31m--------------[m
+ src/shared/trialOptions.ts                   |   2 [32m+[m[31m-[m
+ 27 files changed, 210 insertions(+), 1353 deletions(-)
