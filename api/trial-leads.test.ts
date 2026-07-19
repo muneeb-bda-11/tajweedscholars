@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { normalizeTrialPayload, parseAppsScriptResponse, requestAppsScript, UpstreamError, UpstreamValidationError, validateAppsScriptUrl, validateTrialPayload, type RequestOnce } from "./trial-leads.ts";
+import { normalizeTrialPayload, parseAppsScriptResponse, requestAppsScript, requestAppsScriptWithBusyRetry, TemporarilyBusyError, UpstreamError, UpstreamValidationError, validateAppsScriptUrl, validateTrialPayload, type RequestOnce } from "./trial-leads.ts";
 import { newSubmissionMeta, timeZoneLabel } from "../src/lib/trialUx.ts";
 
 const base = { learnerType: "self", ageGroup: "adult", mainGoal: "tajweed", contactName: "Test Learner", guardianName: "", countryCode: "PK", countryName: "Pakistan", region: "", timeZone: "Asia/Karachi", whatsapp: "+923001234567", email: "learner@example.com", preferredDays: ["monday"], preferredTime: "evening", notes: "", consent: true, submissionId: "test-submission", honeypot: "", formStartedAt: Date.now() - 5000 };
@@ -53,10 +53,21 @@ assert.throws(() => validateAppsScriptUrl("https://script.google.com/macros/s/id
 assert.throws(() => parseAppsScriptResponse({ statusCode: 200, body: "not-json" }), (error: unknown) => error instanceof UpstreamError && error.diagnosticCode === "UPSTREAM_INVALID_RESPONSE");
 assert.throws(() => parseAppsScriptResponse({ statusCode: 400, body: JSON.stringify({ ok: false, code: "VALIDATION_ERROR", fieldErrors: { guardianName: "required", apiSecret: "must not leak" } }) }), (error: unknown) => error instanceof UpstreamValidationError && error.fieldErrors.guardianName === "required" && !("apiSecret" in error.fieldErrors));
 assert.throws(() => parseAppsScriptResponse({ statusCode: 200, body: JSON.stringify({ ok: true, leadId: "wrong-format" }) }), (error: unknown) => error instanceof UpstreamError && error.diagnosticCode === "UPSTREAM_INVALID_RESPONSE");
+assert.throws(() => parseAppsScriptResponse({ statusCode: 503, body: JSON.stringify({ ok: false, code: "TEMPORARILY_BUSY" }) }), (error: unknown) => error instanceof TemporarilyBusyError);
 await assert.rejects(() => requestAppsScript(execUrl, {}, { requestOnce: async () => { throw new UpstreamError("UPSTREAM_TIMEOUT"); } }), (error: unknown) => error instanceof UpstreamError && error.diagnosticCode === "UPSTREAM_TIMEOUT");
 await assert.rejects(() => requestAppsScript(execUrl, {}, { requestOnce: async () => { throw new UpstreamError("UPSTREAM_DNS_ERROR"); } }), (error: unknown) => error instanceof UpstreamError && error.diagnosticCode === "UPSTREAM_DNS_ERROR");
 
 const canonical = normalizeTrialPayload({ ...base, city: "Deprecated", displayLabel: "Adult", apiSecret: "browser-secret" }) as Record<string, unknown>;
 assert.ok(!("city" in canonical)); assert.ok(!("displayLabel" in canonical)); assert.ok(!("apiSecret" in canonical));
+
+const retryBodies: string[] = []; let retryCalls = 0; const delays: number[] = [];
+const retried = await requestAppsScriptWithBusyRetry(execUrl, { ...base, apiSecret: "secret" }, {
+  request: async (_url, retryPayload) => { retryCalls += 1; retryBodies.push(JSON.stringify(retryPayload)); return retryCalls === 1 ? { statusCode: 503, body: JSON.stringify({ ok: false, code: "TEMPORARILY_BUSY" }) } : { statusCode: 200, body: JSON.stringify({ ok: true, leadId: "TS-RETRY-1" }) }; },
+  delay: async (milliseconds) => { delays.push(milliseconds); }, random: () => 0
+});
+assert.equal(retried.leadId, "TS-RETRY-1"); assert.equal(retryCalls, 2); assert.equal(retryBodies[0], retryBodies[1]); assert.deepEqual(delays, [100]);
+let validationCalls = 0;
+await assert.rejects(() => requestAppsScriptWithBusyRetry(execUrl, base, { request: async () => { validationCalls += 1; return { statusCode: 400, body: JSON.stringify({ ok: false, code: "VALIDATION_ERROR", fieldErrors: { email: "Invalid" } }) }; }, delay: async () => undefined }), UpstreamValidationError);
+assert.equal(validationCalls, 1);
 
 console.log("trial-leads HTTPS forwarding tests passed (no real Apps Script call)");

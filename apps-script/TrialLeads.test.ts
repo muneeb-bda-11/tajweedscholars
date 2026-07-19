@@ -57,5 +57,16 @@ assert.match(source, /function repairPhase1AdmissionsDisplayData\(\)/); assert.m
 assert.match(source, /everyMinutes\(5\)/); assert.match(source, /Founder Alert Status/); assert.match(source, /Lead Activity Log/);
 assert.match(source, /Founder Alert Status", "Sent/); assert.match(source, /User Email Status", "Sent/);
 assert.doesNotMatch(source, /processNotificationQueue\(\);[\s\S]{0,200}return json_/);
+const doPostSource = source.slice(source.indexOf("function doPost"), source.indexOf("function queueLeadNotification_"));
+assert.doesNotMatch(doPostSource, /waitLock\(10000\)/);
+assert.match(doPostSource, /tryLock\(2000\)/); assert.match(doPostSource, /TEMPORARILY_BUSY/);
+assert.equal((doPostSource.match(/SpreadsheetApp\.openById/g) || []).length, 1);
+assert.doesNotMatch(doPostSource, /assertHeaders_|ensureOperationalHeaders_|ensureAgeGroupPlainText_|ensureActivitySheet_/);
+assert.doesNotMatch(doPostSource, /SpreadsheetApp\.flush|sendFounderLeadEmail_|sendSubmitterAcknowledgement_|logActivity_|appendRow/);
+assert.equal((doPostSource.match(/\.setValues/g) || []).length, 1);
+assert.match(doPostSource, /setValues\(\[rowFor_\(leadId, normalized\)\]\)[\s\S]*queueLeadNotification_[\s\S]*setProperty\(duplicateKey, leadId\)/);
+assert.match(doPostSource, /if \(!lock\.tryLock\(2000\)\)[\s\S]*TEMPORARILY_BUSY[\s\S]*SpreadsheetApp\.openById/);
+assert.match(doPostSource, /if \(existingLeadId\) \{[\s\S]*leadId = existingLeadId;[\s\S]*\} else \{[\s\S]*setValues/);
+assert.match(source, /function setupTrialLeadSystem\(\)/);
 
 console.log("Admissions operations pure helper, email, queue, and compatibility tests passed");

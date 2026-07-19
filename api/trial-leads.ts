@@ -69,6 +69,9 @@ export class UpstreamValidationError extends Error {
   fieldErrors: FieldErrors;
   constructor(fieldErrors: FieldErrors) { super("UPSTREAM_VALIDATION_ERROR"); this.name = "UpstreamValidationError"; this.fieldErrors = fieldErrors; }
 }
+export class TemporarilyBusyError extends Error {
+  constructor() { super("TEMPORARILY_BUSY"); this.name = "TemporarilyBusyError"; }
+}
 
 export function validateAppsScriptUrl(value: string): URL {
   let url: URL; try { url = new URL(value.trim()); } catch { throw new UpstreamError("UPSTREAM_CONFIG_ERROR"); }
@@ -106,9 +109,15 @@ export async function requestAppsScript(webhookUrl: string, payload: object, opt
   }
 }
 
-const safeDiagnostic = (error: unknown) => error instanceof UpstreamError ? error.diagnosticCode : "UPSTREAM_INVALID_RESPONSE";
+const safeDiagnostic = (error: unknown) => error instanceof TemporarilyBusyError ? "TEMPORARILY_BUSY" : error instanceof UpstreamError ? error.diagnosticCode : "UPSTREAM_INVALID_RESPONSE";
+const setServerTiming = (response: ServerResponse, totalStarted: number, validationFinished: number) => {
+  const finished = performance.now();
+  response.setHeader("Server-Timing", `validation;dur=${Math.max(0, validationFinished - totalStarted).toFixed(1)}, upstream;dur=${Math.max(0, finished - validationFinished).toFixed(1)}, total;dur=${Math.max(0, finished - totalStarted).toFixed(1)}`);
+  return finished;
+};
 export function parseAppsScriptResponse(upstream: UpstreamResult): { ok: true; leadId: string } {
   let result: unknown; try { result = JSON.parse(upstream.body); } catch { throw new UpstreamError("UPSTREAM_INVALID_RESPONSE"); }
+  if (result && typeof result === "object" && (result as { ok?: unknown }).ok === false && (result as { code?: unknown }).code === "TEMPORARILY_BUSY") throw new TemporarilyBusyError();
   if (result && typeof result === "object" && (result as { ok?: unknown }).ok === false && (result as { code?: unknown }).code === "VALIDATION_ERROR" && (result as { fieldErrors?: unknown }).fieldErrors && typeof (result as { fieldErrors?: unknown }).fieldErrors === "object") {
     const allowed = new Set(["learnerType", "ageGroup", "mainGoal", "contactName", "guardianName", "countryCode", "countryName", "region", "timeZone", "whatsapp", "email", "preferredDays", "preferredTime", "notes", "consent"]), fieldErrors: FieldErrors = {};
     for (const [field, message] of Object.entries((result as { fieldErrors: Record<string, unknown> }).fieldErrors)) if (allowed.has(field) && typeof message === "string") fieldErrors[field] = message;
@@ -118,7 +127,27 @@ export function parseAppsScriptResponse(upstream: UpstreamResult): { ok: true; l
   return { ok: true, leadId: (result as { leadId: string }).leadId };
 }
 
+export async function requestAppsScriptWithBusyRetry(
+  webhookUrl: string,
+  payload: object,
+  options: { request?: typeof requestAppsScript; delay?: (milliseconds: number) => Promise<void>; random?: () => number; debug?: boolean } = {}
+): Promise<{ ok: true; leadId: string }> {
+  const request = options.request || requestAppsScript;
+  const delay = options.delay || ((milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds)));
+  const random = options.random || Math.random;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try { return parseAppsScriptResponse(await request(webhookUrl, payload, { debug: options.debug })); }
+    catch (error) {
+      if (!(error instanceof TemporarilyBusyError) || attempt > 0) throw error;
+      await delay(100 + Math.floor(random() * 151));
+    }
+  }
+  throw new UpstreamError("UPSTREAM_INVALID_RESPONSE");
+}
+
 export default async function handler(request: ApiRequest, response: ServerResponse) {
+  const totalStarted = performance.now();
+  let validationFinished = totalStarted;
   const debug = process.env.NODE_ENV !== "production";
   if (debug) console.info("Trial lead: request reached API");
   if (request.method !== "POST") { response.setHeader("Allow", "POST"); return send(response, 405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "Method not allowed." }); }
@@ -131,9 +160,9 @@ export default async function handler(request: ApiRequest, response: ServerRespo
   const guardianRequired = normalized && typeof normalized === "object" && requiresGuardian((normalized as Record<string, unknown>).ageGroup);
   const guardianPresent = normalized && typeof normalized === "object" && typeof (normalized as Record<string, unknown>).guardianName === "string" && Boolean(String((normalized as Record<string, unknown>).guardianName).trim());
   if (debug) { console.info("Trial lead: guardian required", guardianRequired); console.info("Trial lead: guardian present", guardianPresent); }
-  const validated = validateTrialPayload(normalized); if (!validated.payload) { if (debug) console.info("Trial lead: validation failed fields", Object.keys(validated.fieldErrors)); return send(response, 400, { ok: false, code: "VALIDATION_ERROR", message: "Please correct the highlighted fields.", fieldErrors: validated.fieldErrors }); }
+  const validated = validateTrialPayload(normalized); validationFinished = performance.now(); if (!validated.payload) { setServerTiming(response, totalStarted, validationFinished); if (debug) console.info("Trial lead: validation failed fields", Object.keys(validated.fieldErrors)); return send(response, 400, { ok: false, code: "VALIDATION_ERROR", message: "Please correct the highlighted fields.", fieldErrors: validated.fieldErrors }); }
   if (debug) console.info("Trial lead: validation passed");
   const webhookUrl = process.env.APPS_SCRIPT_WEB_APP_URL, apiSecret = process.env.APPS_SCRIPT_API_SECRET; if (!webhookUrl || !apiSecret) return send(response, 500, { ok: false, code: "SUBMISSION_FAILED", message: "We could not submit your request. Please try again or contact us through WhatsApp.", ...(debug ? { diagnosticCode: "UPSTREAM_CONFIG_ERROR" } : {}) });
-  try { const result = parseAppsScriptResponse(await requestAppsScript(webhookUrl, { ...validated.payload, apiSecret }, { debug })); if (debug) console.info("Trial lead: returned lead ID", result.leadId); return send(response, 200, { ok: true, leadId: result.leadId, message: "Your trial request has been received." }); }
-  catch (error) { if (error instanceof UpstreamValidationError) { if (debug) console.info("Trial lead: upstream validation failed fields", Object.keys(error.fieldErrors)); return send(response, 400, { ok: false, code: "VALIDATION_ERROR", message: "Please correct the highlighted fields.", fieldErrors: error.fieldErrors }); } const diagnosticCode = safeDiagnostic(error); if (debug) console.info("Trial lead: safe network error code or error name", diagnosticCode); return send(response, 502, { ok: false, code: "SUBMISSION_FAILED", message: "We could not submit your request. Please try again or contact us through WhatsApp.", ...(debug ? { diagnosticCode } : {}) }); }
+  try { const result = await requestAppsScriptWithBusyRetry(webhookUrl, { ...validated.payload, apiSecret }, { debug }); const finished = setServerTiming(response, totalStarted, validationFinished); if (debug) console.info("Trial lead: completed", { code: "SUCCESS", totalMs: Math.round(finished - totalStarted) }); return send(response, 200, { ok: true, leadId: result.leadId, message: "Your trial request has been received." }); }
+  catch (error) { setServerTiming(response, totalStarted, validationFinished); if (error instanceof UpstreamValidationError) { if (debug) console.info("Trial lead: upstream validation failed fields", Object.keys(error.fieldErrors)); return send(response, 400, { ok: false, code: "VALIDATION_ERROR", message: "Please correct the highlighted fields.", fieldErrors: error.fieldErrors }); } const diagnosticCode = safeDiagnostic(error); if (debug) console.info("Trial lead: safe network error code or error name", diagnosticCode); return send(response, 502, { ok: false, code: "SUBMISSION_FAILED", message: "We could not submit your request. Please try again or contact us through WhatsApp.", ...(debug ? { diagnosticCode } : {}) }); }
 }

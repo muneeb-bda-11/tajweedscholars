@@ -127,12 +127,12 @@ function doPost(e) {
     var hash = digest_(normalized.submissionId);
     var duplicateKey = SUBMISSION_PREFIX + hash;
     var leadId;
-    var spreadsheetUrl;
     var isNewLead = false;
-    var savedAt = Date.now();
 
     var lock = LockService.getScriptLock();
-    lock.waitLock(10000);
+    if (!lock.tryLock(2000)) {
+      return json_(503, false, "TEMPORARILY_BUSY", "The request is busy. Please try again.");
+    }
 
     try {
       var spreadsheet = SpreadsheetApp.openById(
@@ -144,12 +144,6 @@ function doPost(e) {
         throw new Error("The existing Trial Leads sheet was not found.");
       }
 
-      assertHeaders_(sheet);
-      ensureOperationalHeaders_(sheet);
-      ensureAgeGroupPlainText_(sheet);
-      ensureActivitySheet_(spreadsheet, props);
-      spreadsheetUrl = spreadsheet.getUrl();
-
       var existingLeadId = props.getProperty(duplicateKey);
 
       if (existingLeadId) {
@@ -157,17 +151,16 @@ function doPost(e) {
       } else {
         leadId = createLeadId_();
 
-        sheet.appendRow(rowFor_(leadId, normalized));
-        SpreadsheetApp.flush();
-        isNewLead = true;
-
+        sheet.getRange(
+          sheet.getLastRow() + 1,
+          1,
+          1,
+          TRIAL_HEADERS.length + OPERATIONAL_HEADERS.length
+        ).setValues([rowFor_(leadId, normalized)]);
+        queueLeadNotification_(props, hash, leadId, normalized);
         props.setProperty(duplicateKey, leadId);
+        isNewLead = true;
         console.log("Lead row saved: " + leadId);
-        logActivity_(spreadsheet, props, leadId, "LEAD_RECEIVED", "Success", 0, 0, "", "");
-        logActivity_(spreadsheet, props, leadId, "VALIDATION_PASSED", "Success", 0, 0, "", "");
-        logActivity_(spreadsheet, props, leadId, "SHEET_SAVED", "Success", Date.now() - savedAt, 0, "", "");
-        logActivity_(spreadsheet, props, leadId, "FOUNDER_EMAIL_QUEUED", "Queued", 0, 0, "", "");
-        logActivity_(spreadsheet, props, leadId, "USER_EMAIL_QUEUED", "Queued", 0, 0, "", "");
       }
     } finally {
       lock.releaseLock();
@@ -175,10 +168,6 @@ function doPost(e) {
 
     if (isNewLead) console.log("Notifications queued for lead: " + leadId);
 
-    try {
-      var successSpreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
-      logActivity_(successSpreadsheet, props, leadId, "SUCCESS_RETURNED", "Success", Date.now() - savedAt, 0, "", "");
-    } catch (logError) { console.error("Success activity log failed: " + safeErrorCode_(logError)); }
     return json_(
       200,
       true,
@@ -203,7 +192,6 @@ function queueLeadNotification_(
   props,
   hash,
   leadId,
-  spreadsheetUrl,
   lead
 ) {
   var notifiedKey = NOTIFIED_PREFIX + hash;
@@ -216,7 +204,7 @@ function queueLeadNotification_(
   var job = {
     hash: hash,
     leadId: leadId,
-    spreadsheetUrl: spreadsheetUrl,
+    spreadsheetUrl: "https://docs.google.com/spreadsheets/d/" + requiredProperty_(props, "SPREADSHEET_ID"),
     learnerType: lead.learnerType,
     ageGroup: lead.ageGroup,
     mainGoal: lead.mainGoal,
@@ -738,6 +726,22 @@ function setupPhase1Admissions() {
   refreshNotificationTrigger_();
   SpreadsheetApp.flush();
   return verifyPhase1AdmissionsSetup();
+}
+
+function setupTrialLeadSystem() {
+  var props = PropertiesService.getScriptProperties();
+  requiredProperty_(props, "API_SECRET");
+  requiredProperty_(props, "FOUNDER_EMAIL");
+  var spreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
+  var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
+  if (!sheet) throw new Error("TRIAL_LEADS_SHEET_NOT_FOUND");
+  assertHeaders_(sheet);
+  ensureOperationalHeaders_(sheet);
+  ensureAgeGroupPlainText_(sheet);
+  ensureActivitySheet_(spreadsheet, props);
+  setupLeadNotificationTrigger();
+  SpreadsheetApp.flush();
+  return { ready: true, notificationHandler: "processPendingLeadNotifications" };
 }
 
 function verifyPhase1AdmissionsSetup() {
