@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { SITE_CONFIG } from "../config/site";
+import { SITE_CONFIG, siteEmails, siteMailto } from "../config/site";
 import { Icon } from "../components/Icon";
 import { Link } from "../lib/router";
 import { CONTACT_FAQS } from "../config/pageContent";
@@ -7,7 +7,7 @@ import { TrialFaqAccordion } from "../components/TrialFaqAccordion";
 
 const contactOptions = [
   { id: "whatsapp", title: "WhatsApp", description: "Ask an admissions or scheduling question.", href: SITE_CONFIG.WHATSAPP_LINK, icon: "MessageSquare", external: true, label: SITE_CONFIG.WHATSAPP_NUMBER },
-  { id: "email", title: "Email", description: "Send a detailed academic or general inquiry.", href: `mailto:${SITE_CONFIG.CONTACT_EMAIL}`, icon: "Mail", external: false, label: SITE_CONFIG.CONTACT_EMAIL }
+  { id: "email", title: "Email", description: "Send a detailed academic or general inquiry.", href: siteMailto.general, icon: "Mail", external: false, label: siteEmails.general }
 ];
 
 export const Contact: React.FC = () => {

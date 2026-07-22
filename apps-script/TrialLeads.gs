@@ -4,7 +4,7 @@
  * Required Script Properties:
  * - SPREADSHEET_ID
  * - API_SECRET
- * - FOUNDER_EMAIL
+ * - ADMISSIONS_EMAIL
  *
  * Deployment:
  * - Web app
@@ -310,12 +310,12 @@ function checkCRMConfiguration() {
 
   var spreadsheetId = props.getProperty("SPREADSHEET_ID");
   var apiSecret = props.getProperty("API_SECRET");
-  var founderEmail = props.getProperty("FOUNDER_EMAIL");
+  var admissionsEmail = props.getProperty("ADMISSIONS_EMAIL");
 
   console.log("Spreadsheet configured: " + Boolean(spreadsheetId));
   console.log("API secret configured: " + Boolean(apiSecret));
   console.log("API secret length: " + (apiSecret ? apiSecret.length : 0));
-  console.log("Founder email configured: " + Boolean(founderEmail));
+  console.log("Admissions email configured: " + Boolean(admissionsEmail));
   console.log("Email recipients remaining today: " + MailApp.getRemainingDailyQuota());
 
   if (spreadsheetId) {
@@ -731,7 +731,7 @@ function setupPhase1Admissions() {
 function setupTrialLeadSystem() {
   var props = PropertiesService.getScriptProperties();
   requiredProperty_(props, "API_SECRET");
-  requiredProperty_(props, "FOUNDER_EMAIL");
+  requiredProperty_(props, "ADMISSIONS_EMAIL");
   var spreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
   var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
   if (!sheet) throw new Error("TRIAL_LEADS_SHEET_NOT_FOUND");
@@ -877,7 +877,7 @@ function logActivity_(spreadsheet, props, leadId, event, status, duration, attem
 }
 
 function sendFounderLeadEmail_(job, props) {
-  var founderEmail = requiredProperty_(props, "FOUNDER_EMAIL");
+  var admissionsEmail = requiredProperty_(props, "ADMISSIONS_EMAIL");
 
   var regionLine = job.region
     ? "\nState / Province / Region: " + job.region
@@ -920,16 +920,16 @@ function sendFounderLeadEmail_(job, props) {
     job.spreadsheetUrl;
 
   MailApp.sendEmail({
-    to: founderEmail,
+    to: admissionsEmail,
     subject: "New trial request — " + job.leadId,
     body: body,
     name: "Tajweed Scholars Website",
-    replyTo: founderEmail
+    replyTo: admissionsEmail
   });
 }
 
 function sendSubmitterAcknowledgement_(job, props) {
-  var founderEmail = requiredProperty_(props, "FOUNDER_EMAIL");
+  var admissionsEmail = requiredProperty_(props, "ADMISSIONS_EMAIL");
 
   var body =
     "Assalamu alaikum,\n\n" +
@@ -947,7 +947,7 @@ function sendSubmitterAcknowledgement_(job, props) {
     subject: "We received your Tajweed Scholars trial request",
     body: body,
     name: "Tajweed Scholars",
-    replyTo: founderEmail
+    replyTo: admissionsEmail
   });
 }
 
@@ -1110,26 +1110,25 @@ function json_(status, ok, code, message, fieldErrors, leadId) {
 // Phase 1 notification presentation overrides. Kept at the end so deployments
 // upgraded from the original script retain the webhook and validation contract.
 function sendFounderLeadEmail_(lead, props) {
-  var founderEmail = requiredProperty_(props, "FOUNDER_EMAIL");
-  var replyTo = props.getProperty("REPLY_TO_EMAIL") || "tajweedscholar@gmail.com";
+  var admissionsEmail = requiredProperty_(props, "ADMISSIONS_EMAIL");
   var view = presentationValues_(lead);
   var wa = buildWhatsAppUrl_(lead.whatsapp, "Assalamu alaikum, this is Muneeb from Tajweed Scholars. We received your request for three free trial classes.");
   var rows = [["Lead reference", lead.leadId], ["Learner", view.learner], ["Age group", view.ageGroup], ["Name", lead.contactName], ["Guardian", view.guardian], ["Goal", view.goal], ["Country", lead.countryName + " (" + lead.countryCode + ")"], ["Region", view.region], ["Time zone", lead.timeZone], ["Preferred days", view.preferredDays], ["Preferred time", view.preferredTime], ["Notes", view.notes], ["Received", String(lead.receivedAt || "")]];
   var plain = rows.map(function (row) { return row[0] + ": " + row[1]; }).join("\n") + "\n\nOpen CRM: " + lead.spreadsheetUrl;
   var table = rows.map(function (row) { return '<tr><td style="padding:8px;border-bottom:1px solid #e7e5e4;font-weight:700">' + htmlEscape_(row[0]) + '</td><td style="padding:8px;border-bottom:1px solid #e7e5e4">' + htmlEscape_(row[1]) + "</td></tr>"; }).join("");
   var actions = '<div style="margin-top:24px"><a style="' + buttonStyle_("#166534") + '" href="' + htmlEscape_(wa) + '">Message on WhatsApp</a><a style="' + buttonStyle_("#44403c") + '" href="mailto:' + htmlEscape_(lead.email) + '">Reply by Email</a><a style="' + buttonStyle_("#92400e") + '" href="' + htmlEscape_(lead.spreadsheetUrl) + '">Open CRM</a></div>';
-  MailApp.sendEmail({ to: founderEmail, subject: founderEmailSubject_(lead.leadId), body: plain, htmlBody: emailShell_("New trial lead", '<p>A new trial request needs admissions follow-up.</p><table style="width:100%;border-collapse:collapse">' + table + "</table>" + actions), name: "Tajweed Scholars", replyTo: replyTo });
+  MailApp.sendEmail({ to: admissionsEmail, subject: founderEmailSubject_(lead.leadId), body: plain, htmlBody: emailShell_("New trial lead", '<p>A new trial request needs admissions follow-up.</p><table style="width:100%;border-collapse:collapse">' + table + "</table>" + actions, admissionsEmail), name: "Tajweed Scholars", replyTo: admissionsEmail });
 }
 
 function sendSubmitterAcknowledgement_(lead, props) {
-  var replyTo = props.getProperty("REPLY_TO_EMAIL") || "tajweedscholar@gmail.com";
+  var admissionsEmail = requiredProperty_(props, "ADMISSIONS_EMAIL");
   var businessNumber = props.getProperty("WHATSAPP_BUSINESS_NUMBER") || "";
   var wa = buildWhatsAppUrl_(businessNumber, "Assalamu alaikum, I have a question about my Tajweed Scholars trial request.");
   var view = presentationValues_(lead);
-  var plain = "Assalamu alaikum " + lead.contactName + ",\n\nThank you for requesting three free trial classes.\n\nWhat happens next:\n1. We review your learning goal and preferred timings.\n2. We contact you through WhatsApp or email.\n3. We arrange your first trial lesson.\n\nLearner: " + view.learner + "\nAge group: " + view.ageGroup + "\nMain goal: " + view.goal + "\nPreferred days: " + view.preferredDays + "\nPreferred time: " + view.preferredTime + "\nTime zone: " + lead.timeZone + "\nReference: " + lead.leadId + "\n\nNo payment information is required.\n\nTajweed Scholars\nLive private one-to-one Quran classes\n" + replyTo + "\n" + businessNumber;
+  var plain = "Assalamu alaikum " + lead.contactName + ",\n\nThank you for requesting three free trial classes.\n\nWhat happens next:\n1. We review your learning goal and preferred timings.\n2. We contact you through WhatsApp or email.\n3. We arrange your first trial lesson.\n\nLearner: " + view.learner + "\nAge group: " + view.ageGroup + "\nMain goal: " + view.goal + "\nPreferred days: " + view.preferredDays + "\nPreferred time: " + view.preferredTime + "\nTime zone: " + lead.timeZone + "\nReference: " + lead.leadId + "\n\nNo payment information is required.\n\nTajweed Scholars\nLive private one-to-one Quran classes\n" + admissionsEmail + "\n" + businessNumber;
   var summary = '<table style="width:100%;border-collapse:collapse"><tr><td><strong>Learner</strong></td><td>' + htmlEscape_(view.learner) + '</td></tr><tr><td><strong>Age group</strong></td><td>' + htmlEscape_(view.ageGroup) + '</td></tr><tr><td><strong>Main goal</strong></td><td>' + htmlEscape_(view.goal) + '</td></tr><tr><td><strong>Preferred days</strong></td><td>' + htmlEscape_(view.preferredDays) + '</td></tr><tr><td><strong>Preferred time</strong></td><td>' + htmlEscape_(view.preferredTime) + '</td></tr><tr><td><strong>Time zone</strong></td><td>' + htmlEscape_(lead.timeZone) + '</td></tr><tr><td><strong>Reference</strong></td><td>' + htmlEscape_(lead.leadId) + "</td></tr></table>";
   var content = '<p>Assalamu alaikum ' + htmlEscape_(lead.contactName) + ',</p><p>Thank you for requesting three free trial classes.</p><h2 style="font-size:18px">What happens next</h2><ol><li>We review your learning goal and preferred timings.</li><li>We contact you through WhatsApp or email.</li><li>We arrange your first trial lesson.</li></ol>' + summary + '<p><strong>No payment information is required.</strong></p>' + (wa ? '<p><a style="' + buttonStyle_("#166534") + '" href="' + htmlEscape_(wa) + '">Message Tajweed Scholars</a></p>' : "");
-  MailApp.sendEmail({ to: lead.email, subject: userEmailSubject_(), body: plain, htmlBody: emailShell_("Request received", content), name: "Tajweed Scholars", replyTo: replyTo });
+  MailApp.sendEmail({ to: lead.email, subject: userEmailSubject_(), body: plain, htmlBody: emailShell_("Request received", content, admissionsEmail), name: "Tajweed Scholars", replyTo: admissionsEmail });
 }
 
 function htmlEscape_(value) { return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
@@ -1145,6 +1144,6 @@ function buildWhatsAppUrl_(number, message) { var digits = String(number || "").
 function founderEmailSubject_(leadId) { return "[ACTION REQUIRED] New Trial Lead \u2014 " + String(leadId); }
 function userEmailSubject_() { return "We received your Tajweed Scholars trial request"; }
 function buttonStyle_(color) { return "display:inline-block;margin:4px;padding:12px 16px;border-radius:6px;background:" + color + ";color:#fff;text-decoration:none;font-weight:700"; }
-function emailShell_(title, content) { return '<div style="background:#f5f1e8;padding:24px;font-family:Arial,sans-serif;color:#292524"><div style="max-width:640px;margin:auto;background:#fff;border:1px solid #e7e5e4;border-radius:10px;overflow:hidden"><div style="background:#163d2b;color:#fff;padding:20px"><div style="font-family:Georgia,serif;font-size:24px">Tajweed Scholars</div><div>' + htmlEscape_(title) + '</div></div><div style="padding:24px;line-height:1.6">' + content + '</div><div style="padding:18px 24px;background:#fafaf9;color:#57534e;font-size:13px">Tajweed Scholars<br>Live private one-to-one Quran classes<br>tajweedscholar@gmail.com</div></div></div>'; }
+function emailShell_(title, content, contactEmail) { return '<div style="background:#f5f1e8;padding:24px;font-family:Arial,sans-serif;color:#292524"><div style="max-width:640px;margin:auto;background:#fff;border:1px solid #e7e5e4;border-radius:10px;overflow:hidden"><div style="background:#163d2b;color:#fff;padding:20px"><div style="font-family:Georgia,serif;font-size:24px">Tajweed Scholars</div><div>' + htmlEscape_(title) + '</div></div><div style="padding:24px;line-height:1.6">' + content + '</div><div style="padding:18px 24px;background:#fafaf9;color:#57534e;font-size:13px">Tajweed Scholars<br>Live private one-to-one Quran classes<br>' + htmlEscape_(contactEmail) + '</div></div></div>'; }
 function safeErrorCode_(error) { return String(error && (error.code || error.name) || "NOTIFICATION_ERROR").replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 60); }
 function safeErrorMessage_(error) { return safeErrorCode_(error); }

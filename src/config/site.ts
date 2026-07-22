@@ -4,6 +4,23 @@
  * navigation metadata, FAQs, and contact parameters.
  */
 
+export const siteEmails = {
+  general: "info@tajweedscholars.com",
+  admissions: "admissions@tajweedscholars.com",
+  accounts: "accounts@tajweedscholars.com",
+  privacy: "privacy@tajweedscholars.com",
+} as const;
+
+const mailto = (email: string, subject: string) =>
+  `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+
+export const siteMailto = {
+  general: mailto(siteEmails.general, "General Enquiry - Tajweed Scholars"),
+  admissions: mailto(siteEmails.admissions, "Trial Class Enquiry - Tajweed Scholars"),
+  accounts: mailto(siteEmails.accounts, "Billing Enquiry - Tajweed Scholars"),
+  privacy: mailto(siteEmails.privacy, "Privacy Request - Tajweed Scholars"),
+} as const;
+
 export const SITE_CONFIG = {
   name: "Tajweed Scholars",
   tagline: "Helping Every Muslim Build a Lifelong Connection with the Quran",
@@ -11,7 +28,7 @@ export const SITE_CONFIG = {
   
   // Contact & Socials
   WHATSAPP_NUMBER: "+923246608501",
-  CONTACT_EMAIL: "tajweedscholar@gmail.com",
+  CONTACT_EMAIL: siteEmails.general,
   WHATSAPP_LINK: "https://wa.me/923246608501",
   SOCIAL_LINKS: { instagram: "", facebook: "", youtube: "", tiktok: "", linkedin: "" },
   

@@ -1,5 +1,5 @@
 import React from "react";
-import { SITE_CONFIG, NAVIGATION_LINKS } from "../config/site";
+import { SITE_CONFIG, NAVIGATION_LINKS, siteEmails, siteMailto } from "../config/site";
 import { Link } from "../lib/router";
 import { Icon } from "./Icon";
 
@@ -11,7 +11,7 @@ export const Footer: React.FC = () => <footer id="app-footer" className="border-
   <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
     <div className="grid gap-9 border-b border-white/20 pb-8 sm:grid-cols-2 lg:grid-cols-4">
       <div><img src="/brand/logo-horizontal-white.svg" alt="Tajweed Scholars" width="1600" height="400" className="h-auto w-[205px]"/><p className="mt-3 text-sm leading-6">Live, private one-to-one Quran classes for children and adults.</p>
-        <div className="mt-4 grid gap-2"><a href={SITE_CONFIG.WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-3 text-sm"><Icon name="Phone" size={18}/><span><strong>WhatsApp</strong><br/><span className="text-white/75">+92 324 660 8501</span></span></a><a href={`mailto:${SITE_CONFIG.CONTACT_EMAIL}`} className="flex min-h-11 items-center gap-3 text-sm"><Icon name="Mail" size={18}/><span><strong>Email</strong><br/><span className="break-all text-white/75">{SITE_CONFIG.CONTACT_EMAIL}</span></span></a></div>
+        <div className="mt-4 grid gap-2"><a href={SITE_CONFIG.WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-3 text-sm"><Icon name="Phone" size={18}/><span><strong>WhatsApp</strong><br/><span className="text-white/75">+92 324 660 8501</span></span></a><a href={siteMailto.general} className="flex min-h-11 items-center gap-3 text-sm"><Icon name="Mail" size={18}/><span><strong>Email</strong><br/><span className="break-all text-white/75">{siteEmails.general}</span></span></a></div>
       </div>
       <div><h2 className="text-sm font-bold text-white">Programs</h2><ul className="mt-2">{NAVIGATION_LINKS.programs.map(FooterLink)}</ul></div>
       <div><h2 className="text-sm font-bold text-white">Academy</h2><ul className="mt-2">{academy.map(FooterLink)}</ul></div>
