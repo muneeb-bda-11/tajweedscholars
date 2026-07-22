@@ -25,7 +25,7 @@ assert.match(programs, /Children ages 4–15/); assert.match(programs, /consulta
 
 assert.match(app, /path="\/about" element={<About \/>}/); assert.doesNotMatch(about, /placeholder|under construction/i); assert.match(about, /complete verified Sanad/);
 assert.match(app, /path="\/why-choose-us" element={<WhyChooseUs \/>}/); assert.doesNotMatch(why, /placeholder|under construction/i); assert.match(why, /WHY_CHOOSE_US/); assert.match(why, /TRUST_STRIP/);
-assert.match(policy, /Privacy Policy/); assert.match(policy, /90 days/); assert.match(policy, /not been legally reviewed/); assert.match(policy + config, /tajweedscholar@gmail.com/);
+assert.match(policy, /Privacy Policy/); assert.match(policy, /90 days/); assert.match(policy, /not been legally reviewed/); assert.match(policy + config, /privacy@tajweedscholars\.com/); assert.match(config, /info@tajweedscholars\.com/);
 
 assert.match(app, /path="\/free-trial" element={<FreeTrial \/>}/);
 assert.match(header, /mobile-programs/); assert.match(header, /mobile-policies/); assert.match(header, /NAVIGATION_LINKS\.programs/);

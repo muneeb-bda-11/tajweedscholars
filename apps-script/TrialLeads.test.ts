@@ -34,7 +34,7 @@ assert.equal(fn<(a: string, b: string, c: number, d: number) => boolean>("notifi
 assert.equal(fn<(a: number, b: number) => boolean>("retryExhausted_")(3, 3), true);
 
 const lead = { leadId: "TS-TEST-1", receivedAt: "2026-01-01T00:00:00Z", learnerType: "child", ageGroup: "7-9", mainGoal: "qaida", contactName: "A <Learner>", guardianName: "Parent & Guardian", countryCode: "PK", countryName: "Pakistan", region: "", timeZone: "Asia/Karachi", whatsapp: "+923294293717", email: "test@example.com", preferredDays: ["monday"], preferredTime: "evening", notes: "<private>", spreadsheetUrl: "https://docs.google.com/spreadsheets/d/test" };
-const properties = { FOUNDER_EMAIL: "founder@example.com", REPLY_TO_EMAIL: "tajweedscholar@gmail.com", WHATSAPP_BUSINESS_NUMBER: "+923246608501", WEBSITE_URL: "https://example.test" };
+const properties = { ADMISSIONS_EMAIL: "admissions@tajweedscholars.com", WHATSAPP_BUSINESS_NUMBER: "+923246608501", WEBSITE_URL: "https://example.test" };
 const props = { getProperty(key: string) { return properties[key as keyof typeof properties] || ""; } };
 fn<(lead: Record<string, unknown>, props: { getProperty(key: string): string }) => void>("sendFounderLeadEmail_")(lead, props);
 fn<(lead: Record<string, unknown>, props: { getProperty(key: string): string }) => void>("sendSubmitterAcknowledgement_")(lead, props);
@@ -44,6 +44,8 @@ assert.doesNotMatch(String(sent[0].htmlBody), /<private>|<Learner>/); assert.mat
 assert.match(String(sent[0].body), /Child learner/); assert.match(String(sent[0].body), /Start with Qaida/); assert.match(String(sent[0].body), /7\u20139/); assert.match(String(sent[0].body), /Evening/);
 assert.doesNotMatch(String(sent[0].body) + String(sent[1].body), /(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} \d{2} \d{4}/);
 assert.match(String(sent[1].htmlBody), /What happens next/); assert.match(String(sent[1].htmlBody), /No payment information is required/); assert.match(String(sent[1].body), /Live private one-to-one Quran classes/);
+assert.equal(sent[0].to, "admissions@tajweedscholars.com"); assert.equal(sent[0].replyTo, "admissions@tajweedscholars.com"); assert.equal(sent[1].replyTo, "admissions@tajweedscholars.com");
+assert.match(String(sent[0].htmlBody) + String(sent[1].htmlBody), /admissions@tajweedscholars\.com/);
 
 const row = fn<(id: string, lead: Record<string, unknown>) => unknown[]>("rowFor_")("TS-TEST-1", { ...lead, consent: true });
 assert.equal(row[5], "7-9"); assert.equal(row[8], "Parent & Guardian"); assert.equal(row[11], "Not provided"); assert.equal(row[17], "<private>");

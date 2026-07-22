@@ -10,8 +10,7 @@ In Apps Script, open **Project Settings → Script Properties** and add:
 | --- | --- |
 | `SPREADSHEET_ID` | ID of the official CRM spreadsheet |
 | `API_SECRET` | A long, randomly generated secret shared only with Vercel |
-| `FOUNDER_EMAIL` | Founder admissions inbox |
-| `REPLY_TO_EMAIL` | `tajweedscholar@gmail.com` |
+| `ADMISSIONS_EMAIL` | `admissions@tajweedscholars.com` |
 | `WEBSITE_URL` | Official HTTPS website URL |
 | `WHATSAPP_BUSINESS_NUMBER` | Official international number, including country code |
 | `TRIAL_LEADS_SHEET_NAME` | `Trial Leads` |
@@ -46,7 +45,7 @@ Never place property values, deployment URLs, passwords, lead data, or API secre
 
 1. Use a designated test email and phone number to submit one real Free Trial request.
 2. Confirm the website receives the existing successful response and lead ID.
-3. Confirm one new row appears in `Trial Leads`, with founder and user statuses initially `Queued`.
+3. Confirm one new row appears in `Trial Leads`, with internal admissions and user statuses initially `Queued`.
 4. Run `processNotificationQueue()` manually once, or wait for the five-minute trigger.
 5. Confirm sent timestamps/statuses and processing duration update. If one email fails, confirm the lead remains saved and that notification becomes `Retrying` or `Failed`.
 6. Check `Lead Activity Log` for safe lifecycle events without names, emails, phone numbers, notes, payloads, or secrets.
@@ -54,6 +53,13 @@ Never place property values, deployment URLs, passwords, lead data, or API secre
 8. Run `verifyPhase1AdmissionsSetup()` again.
 
 Automated repository tests do not call Google, write a Sheet, or send email.
+
+The website repository does not control Google Apps Script properties. Update
+`ADMISSIONS_EMAIL` in the deployed Apps Script project's **Project Settings →
+Script Properties** before publishing the revised script. Remove the legacy
+`FOUNDER_EMAIL` and `REPLY_TO_EMAIL` properties after the revised deployment has
+been verified. The founder's internal administration address is not required by
+this admissions notification workflow.
 
 ## Rollback
 
