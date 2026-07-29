@@ -1,4 +1,6 @@
 export const CANONICAL_BASE = "https://tajweedscholars.com";
+export const SOCIAL_IMAGE_URL = `${CANONICAL_BASE}/brand/og-cover.png`;
+export const SITE_NAME = "Tajweed Scholars";
 
 export interface PageMetadata {
   title: string;
@@ -31,3 +33,5 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
 };
 
 export const PUBLIC_ROUTES = Object.keys(PAGE_METADATA);
+
+export const canonicalUrlFor = (path: string) => `${CANONICAL_BASE}${path === "/" ? "/" : path}`;

@@ -20,8 +20,10 @@ export const resolveInitialRoute = ({ pathname, search, hash }: BrowserLocation)
 
 export const isInternalRoute = (to: string) => to.startsWith("/") && !to.startsWith("//");
 
-export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [initialRoute] = useState(() => resolveInitialRoute({ pathname: window.location.pathname, search: window.location.search, hash: window.location.hash }));
+export const RouterProvider: React.FC<{ children: React.ReactNode; initialPath?: string }> = ({ children, initialPath }) => {
+  const [initialRoute] = useState(() => initialPath
+    ? { path: initialPath }
+    : resolveInitialRoute({ pathname: window.location.pathname, search: window.location.search, hash: window.location.hash }));
   const [path, setPath] = useState(initialRoute.path);
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export const Route: React.FC<RouteProps> = ({ path: routePath, element }) => {
 interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> { to: string; children: React.ReactNode; activeClassName?: string; }
 export const Link: React.FC<LinkProps> = ({ to, children, className, activeClassName = "active-route", onClick, onPointerEnter, onFocus, ...props }) => {
   const { path, navigate } = useRouter();
-  const targetPath = isInternalRoute(to) ? new URL(to, window.location.origin).pathname : to;
+  const targetPath = isInternalRoute(to) ? new URL(to, "https://tajweedscholars.com").pathname : to;
   const isActive = path === targetPath || (targetPath !== "/" && path.startsWith(targetPath));
   const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     onClick?.(event);

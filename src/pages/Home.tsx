@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { AudiencePathSelector } from "../components/home/AudiencePathSelector";
 import { ClassExperience } from "../components/home/ClassExperience";
 import { HeroLessonVisual } from "../components/home/HeroLessonVisual";
@@ -11,10 +11,6 @@ import { useProgramFinder } from "../components/ProgramFinder";
 export const Home: React.FC = () => {
   const { navigate } = useRouter();
   const { openFinder } = useProgramFinder();
-
-  useEffect(() => {
-    document.title = "Online Quran Classes for Children & Adults | Tajweed Scholars";
-  }, []);
 
   return (
     <div id="home-page" className="overflow-x-clip">

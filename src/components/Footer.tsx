@@ -13,8 +13,8 @@ export const Footer: React.FC = () => <footer id="app-footer" className="border-
       <div><img src="/brand/logo-horizontal-white.svg" alt="Tajweed Scholars" width="1600" height="400" className="h-auto w-[205px]"/><p className="mt-3 text-sm leading-6">Live, private one-to-one Quran classes for children and adults.</p>
         <div className="mt-4 grid gap-2"><a href={SITE_CONFIG.WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-3 text-sm"><Icon name="Phone" size={18}/><span><strong>WhatsApp</strong><br/><span className="text-white/75">+92 324 660 8501</span></span></a><a href={siteMailto.general} className="flex min-h-11 items-center gap-3 text-sm"><Icon name="Mail" size={18}/><span><strong>Email</strong><br/><span className="break-all text-white/75">{siteEmails.general}</span></span></a></div>
       </div>
-      <div><h2 className="text-sm font-bold text-white">Programs</h2><ul className="mt-2">{NAVIGATION_LINKS.programs.map(FooterLink)}</ul></div>
-      <div><h2 className="text-sm font-bold text-white">Academy</h2><ul className="mt-2">{academy.map(FooterLink)}</ul></div>
+      <div><h2 className="text-sm font-bold text-white">Programs</h2><ul className="mt-2">{NAVIGATION_LINKS.programs.map((item) => <FooterLink key={item.path} {...item} />)}</ul></div>
+      <div><h2 className="text-sm font-bold text-white">Academy</h2><ul className="mt-2">{academy.map((item) => <FooterLink key={item.path} {...item} />)}</ul></div>
       <div><h2 className="text-sm font-bold text-white">Policies & Support</h2><ul className="mt-2 grid sm:grid-cols-2 lg:grid-cols-1">{NAVIGATION_LINKS.policies.map((link) => <FooterLink key={link.path} path={link.path} label={policyLabels[link.path] || link.label}/>)}</ul></div>
     </div><p className="pt-5 text-xs text-white/75">© {new Date().getFullYear()} Tajweed Scholars. All rights reserved.</p>
   </div>

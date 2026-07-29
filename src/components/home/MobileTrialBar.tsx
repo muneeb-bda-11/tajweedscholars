@@ -10,9 +10,11 @@ export const MobileTrialBar: React.FC = () => {
   const [footerVisible, setFooterVisible] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dismissed, setDismissed] = useState(() => {
-    try { return sessionStorage.getItem(SESSION_KEY) === "true"; } catch { return false; }
-  });
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    try { setDismissed(sessionStorage.getItem(SESSION_KEY) === "true"); } catch { /* Storage may be unavailable. */ }
+  }, []);
 
   useEffect(() => {
     if (dismissed) return;
