@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { PROGRAMS } from "../config/site";
 import { Icon } from "../components/Icon";
 import { Link, useRouter } from "../lib/router";
@@ -23,7 +23,6 @@ const availability: Record<string, string> = {
 export const ProgramPage: React.FC = () => {
   const { path } = useRouter();
   const program = PROGRAMS.find((item) => item.path === path);
-  useEffect(() => { document.title = `${program?.title || "Program"} | Tajweed Scholars`; }, [program?.title]);
   if (!program) return null;
   const visual = PROGRAM_VISUALS[program.id];
 

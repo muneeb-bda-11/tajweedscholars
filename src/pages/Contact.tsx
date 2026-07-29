@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { SITE_CONFIG, siteEmails, siteMailto } from "../config/site";
 import { Icon } from "../components/Icon";
 import { Link } from "../lib/router";
@@ -11,8 +11,6 @@ const contactOptions = [
 ];
 
 export const Contact: React.FC = () => {
-  useEffect(() => { document.title = "Contact Tajweed Scholars"; }, []);
-
   return (
     <div className="py-14 md:py-20" id="contact-page">
       <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">

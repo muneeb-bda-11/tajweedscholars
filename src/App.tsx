@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { RouterProvider, Route } from "./lib/router";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
@@ -20,8 +20,11 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy").then(m => ({ de
 const PolicyPage = lazy(() => import("./pages/PolicyPage").then(m => ({ default: m.PolicyPage })));
 const NotFoundRoute = lazy(() => import("./pages/NotFound").then(m => ({ default: m.NotFoundRoute })));
 
-function AppRoutes() {
+function AppRoutes({ initialRouteElement }: { initialRouteElement?: React.ReactNode }) {
+  const [prerenderedElement, setPrerenderedElement] = useState(initialRouteElement);
   useEffect(prefetchPriorityRoutesWhenIdle, []);
+  useEffect(() => { if (prerenderedElement) setPrerenderedElement(undefined); }, [prerenderedElement]);
+  if (prerenderedElement) return <>{prerenderedElement}</>;
   return <Suspense fallback={<RouteFallback />}>
     <Route path="/" element={<Home />} /><Route path="/free-trial" element={<FreeTrial />} /><Route path="/pricing" element={<Pricing />} /><Route path="/contact" element={<Contact />} /><Route path="/programs" element={<Programs />} />
     <Route path="/kids-quran-classes" element={<ProgramPage />} /><Route path="/adult-quran-classes" element={<ProgramPage />} /><Route path="/tajweed-course" element={<ProgramPage />} /><Route path="/hifz-program" element={<ProgramPage />} /><Route path="/arabic-language" element={<ProgramPage />} /><Route path="/islamic-studies" element={<ProgramPage />} />
@@ -31,4 +34,4 @@ function AppRoutes() {
   </Suspense>;
 }
 
-export default function App() { return <RouterProvider><ProgramFinderProvider><div className="flex min-h-screen flex-col bg-stone-50 font-sans text-stone-850 antialiased selection:bg-emerald-800 selection:text-stone-50"><Header /><main className="flex-grow"><AppRoutes /></main><PageMetadata /><Footer /><MobileTrialBar /></div></ProgramFinderProvider></RouterProvider>; }
+export default function App({ initialPath, initialRouteElement }: { initialPath?: string; initialRouteElement?: React.ReactNode } = {}) { return <RouterProvider initialPath={initialPath}><ProgramFinderProvider><div className="flex min-h-screen flex-col bg-stone-50 font-sans text-stone-850 antialiased selection:bg-emerald-800 selection:text-stone-50"><Header /><main className="flex-grow"><AppRoutes initialRouteElement={initialRouteElement} /></main><PageMetadata /><Footer /><MobileTrialBar /></div></ProgramFinderProvider></RouterProvider>; }

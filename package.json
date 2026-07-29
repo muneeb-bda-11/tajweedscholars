@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
+    "build": "vite build && tsx scripts/prerender.tsx && npm run validate:seo",
+    "validate:seo": "tsx scripts/validate-seo.ts",
     "test": "tsx --test src/**/*.test.ts api/*.test.ts apps-script/*.test.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",

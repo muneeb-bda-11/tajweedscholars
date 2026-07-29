@@ -9,7 +9,7 @@ export const Pricing: React.FC = () => {
   const [currency, setCurrency] = useState<keyof typeof PRICING.currencies>("USD");
   const [selected, setSelected] = useState(1);
   const money = PRICING.currencies[currency];
-  useEffect(() => { document.title = "Online Quran Class Pricing | Tajweed Scholars"; try { const region = new Intl.Locale(navigator.language).region as keyof typeof PRICING.localeCurrencies | undefined; if (region && PRICING.localeCurrencies[region]) setCurrency(PRICING.localeCurrencies[region]); } catch { /* USD remains the safe default; users can always change it. */ } }, []);
+  useEffect(() => { try { const region = new Intl.Locale(navigator.language).region as keyof typeof PRICING.localeCurrencies | undefined; if (region && PRICING.localeCurrencies[region]) setCurrency(PRICING.localeCurrencies[region]); } catch { /* USD remains the safe default; users can always change it. */ } }, []);
 
   return (
     <div className="py-14 md:py-20" id="pricing-page">

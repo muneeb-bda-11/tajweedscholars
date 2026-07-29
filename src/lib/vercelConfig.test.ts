@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { PAGE_METADATA } from "../config/metadata";
 
 interface VercelConfig {
   $schema: string;
-  rewrites: Array<{ source: string; destination: string }>;
+  trailingSlash: boolean;
+  cleanUrls: boolean;
+  rewrites?: unknown;
   routes?: unknown;
 }
 
@@ -14,25 +15,9 @@ const config = JSON.parse(
 
 assert.equal(config.$schema, "https://openapi.vercel.sh/vercel.json");
 assert.equal(config.routes, undefined, "legacy routes must not override filesystem/API handling");
-
-const expectedPublicDeepLinks = Object.keys(PAGE_METADATA).filter((route) => route !== "/");
-const sources = config.rewrites.map(({ source }) => source);
-assert.deepEqual(sources, expectedPublicDeepLinks, "every clean public URL has one exact SPA fallback");
-assert.equal(new Set(sources).size, sources.length, "fallback sources are unique");
-for (const rewrite of config.rewrites) {
-  assert.equal(rewrite.destination, "/index.html");
-  assert.ok(!rewrite.source.includes("*"), "fallbacks must not catch API or static resources");
-}
-
-for (const preservedPath of [
-  "/api/trial-leads",
-  "/robots.txt",
-  "/sitemap.xml",
-  "/assets/example.js",
-  "/brand/logo-horizontal.svg",
-]) {
-  assert.ok(!sources.includes(preservedPath), `${preservedPath} bypasses the SPA fallback`);
-}
+assert.equal(config.rewrites, undefined, "public routes must resolve to generated filesystem HTML");
+assert.equal(config.cleanUrls, true, "generated HTML is served through extensionless public URLs");
+assert.equal(config.trailingSlash, false, "trailing-slash variants redirect to canonical non-trailing URLs");
 
 const router = readFileSync(new URL("router.tsx", import.meta.url), "utf8");
 assert.match(router, /window\.history\.pushState/);
@@ -40,4 +25,4 @@ assert.match(router, /window\.location\.pathname/);
 assert.match(router, /href={to}/);
 assert.doesNotMatch(router, /hashchange/);
 
-console.log("Vercel exact public-route fallbacks preserve API/static files and clean navigation");
+console.log("Vercel filesystem prerendering preserves clean navigation and canonical trailing-slash behavior");
