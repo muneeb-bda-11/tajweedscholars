@@ -3,11 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build && tsx scripts/prerender.tsx && npm run validate:seo",
     "validate:seo": "tsx scripts/validate-seo.ts",
-    "test": "tsx --test src/**/*.test.ts api/*.test.ts apps-script/*.test.ts",
+    "test": "tsx --test src/**/*.test.ts api/*.test.ts apps-script/*.test.ts scripts/*.test.ts",
+    "verify:production": "tsx scripts/verify-production.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit"
