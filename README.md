@@ -6,7 +6,8 @@ Production marketing website for Tajweed Scholars, built with React 19, Vite, Ty
 
 - `src/` contains the React application, route components, shared configuration, and client-side routing.
 - `scripts/prerender.tsx` renders every configured public route into route-specific HTML under `dist/` after Vite builds the client assets. It uses React's server renderer and Node APIs already in the project, without a separate prerendering dependency.
-- `scripts/validate-seo.ts` verifies all 22 generated routes, including unique metadata, canonicals, social metadata, one H1, one main landmark, meaningful initial HTML, and valid internal links.
+- `scripts/validate-seo.ts` verifies every route in the canonical `PUBLIC_ROUTES` collection, including unique metadata, canonicals, social metadata, one H1, one main landmark, meaningful initial HTML, and valid internal links.
+- `src/content/resources.ts` is the typed source for published and draft Resources content. Only published records contribute metadata, public routes, prerendered HTML, sitemap entries, and RSS items.
 - `api/trial-leads.ts` is the Vercel serverless boundary for Free Trial submissions. It validates the payload before forwarding it to the configured Apps Script endpoint.
 - `apps-script/` contains the separately deployed admissions webhook and its operational documentation.
 
@@ -33,7 +34,7 @@ npm run validate:seo
 git diff --check
 ```
 
-`npm run build` creates the Vite bundle, prerenders all 22 public routes, and validates their generated HTML, metadata, canonicals, landmarks, and production-safe URLs. `npm run validate:seo` remains a separate CI gate so an already-built output can be checked directly. Existing tests preserve real 404 behavior and canonical non-trailing routes.
+`npm run build` creates the Vite bundle, prerenders every route derived through `PUBLIC_ROUTES`, and validates generated HTML, metadata, canonicals, landmarks, and production-safe URLs. The current published configuration generates 24 public routes. `npm run validate:seo` remains a separate CI gate so an already-built output can be checked directly. Existing tests preserve real 404 behavior and canonical non-trailing routes.
 
 For an optional local responsive audit, run `node scripts/audit-responsive.mjs`. It uses an installed Chromium-family browser and writes generated screenshots and measurements only below `.artifacts/`.
 
@@ -45,7 +46,7 @@ Run the dependency-free, read-only production smoke test with:
 npm run verify:production
 ```
 
-It sends only GET requests, never submits a form or changes remote data, and checks all 22 production routes plus robots, sitemap, 404, canonical redirects, and the API method guard. No secrets are required.
+It sends only GET requests, never submits a form or changes remote data, and checks every currently published route from `PUBLIC_ROUTES` plus robots, sitemap, 404, canonical redirects, and the API method guard. It is a manual post-deployment check and is intentionally not run by CI. No secrets are required.
 
 ## Vercel deployment
 

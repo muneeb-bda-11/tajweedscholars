@@ -6,6 +6,7 @@ import { DRAFT_RESOURCES, PUBLISHED_RESOURCES, RESOURCE_RECORDS, publishedResour
 assert.equal(RESOURCE_RECORDS.length, 5);
 assert.equal(PUBLISHED_RESOURCES.length, 1);
 assert.equal(DRAFT_RESOURCES.length, 4);
+assert.equal(PUBLIC_ROUTES.length, Object.keys(PAGE_METADATA).length, "public routes are derived from published metadata");
 assert.equal(new Set(RESOURCE_RECORDS.map(({ slug }) => slug)).size, RESOURCE_RECORDS.length, "resource slugs are unique");
 
 for (const resource of RESOURCE_RECORDS) {

@@ -43,7 +43,7 @@ export const RESOURCE_RECORDS: ResourceRecord[] = [
     summary: "A practical, step-by-step explanation of the three free trial classes and what admissions confirms before regular lessons begin.",
     category: "Getting Started",
     intendedAudience: "Parents and adult learners",
-    authorName: "Tajweed Scholars Admissions Team",
+    authorName: "Tajweed Scholars",
     publishedDate: "2026-08-02",
     updatedDate: "2026-08-02",
     draft: false,
