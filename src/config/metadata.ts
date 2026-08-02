@@ -1,3 +1,5 @@
+import { PUBLISHED_RESOURCES, resourceRoute } from "../content/resources";
+
 export const CANONICAL_BASE = "https://tajweedscholars.com";
 export const SOCIAL_IMAGE_URL = `${CANONICAL_BASE}/brand/og-cover.png`;
 export const SITE_NAME = "Tajweed Scholars";
@@ -30,6 +32,8 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
   "/recording-policy": { title: "Class Recording & Consent Policy | Tajweed Scholars", description: "When classes may be recorded, how consent works, who can access recordings, and the retention standard." },
   "/complaints": { title: "Complaints Process | Tajweed Scholars", description: "How to raise a concern with Tajweed Scholars and how complaints are reviewed, resolved, and escalated." },
   "/acceptable-use": { title: "Acceptable Use Policy | Tajweed Scholars", description: "How to use Tajweed Scholars classes, official communication channels, and website respectfully and safely." },
+  "/resources": { title: "Quran Learning Resources | Tajweed Scholars", description: "Practical, human-reviewed guidance for parents and adult learners considering private online Quran classes." },
+  ...Object.fromEntries(PUBLISHED_RESOURCES.map((resource) => [resourceRoute(resource), { title: `${resource.title} | Tajweed Scholars`, description: resource.metaDescription }])),
 };
 
 export const PUBLIC_ROUTES = Object.keys(PAGE_METADATA);

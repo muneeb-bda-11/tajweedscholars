@@ -33,9 +33,9 @@ const routes = process.env.AUDIT_ROUTES?.split(",") || ["/", "/programs", "/free
 const widths = process.env.AUDIT_WIDTHS?.split(",").map(Number) || [1440, 320, 360, 390, 430, 768];
 const screenshotWidths = new Set([320, 360, 390, 430, 768, 1024, 1440]);
 const policyRoutes = ["/terms-and-conditions", "/payment-policy", "/refund-policy", "/reschedule-policy", "/child-safeguarding", "/recording-policy", "/complaints", "/acceptable-use"];
-const routeSelectors = { "/": "#home-page", "/programs": "#programs-page", "/free-trial": "[aria-label='Free Trial form progress']", "/pricing": "#pricing-page", "/about": "#about-page", "/why-choose-us": "#why-choose-us-page", "/contact": "#contact-page", "/privacy-policy": "#privacy-policy-page", ...Object.fromEntries(policyRoutes.map((route) => [route, "#policy-page"])) };
-const routeChunks = { "/programs": "/Programs-", "/free-trial": "/FreeTrial-", "/pricing": "/Pricing-", "/about": "/About-", "/why-choose-us": "/WhyChooseUs-", "/contact": "/Contact-", "/privacy-policy": "/PrivacyPolicy-", ...Object.fromEntries(policyRoutes.map((route) => [route, "/PolicyPage-"])) };
-const port = 9333;
+const routeSelectors = { "/": "#home-page", "/programs": "#programs-page", "/free-trial": "[aria-label='Free Trial form progress']", "/pricing": "#pricing-page", "/about": "#about-page", "/why-choose-us": "#why-choose-us-page", "/contact": "#contact-page", "/privacy-policy": "#privacy-policy-page", "/resources": "#resources-page", "/resources/what-happens-in-three-free-quran-trial-classes": "#resource-article-page", ...Object.fromEntries(policyRoutes.map((route) => [route, "#policy-page"])) };
+const routeChunks = { "/programs": "/Programs-", "/free-trial": "/FreeTrial-", "/pricing": "/Pricing-", "/about": "/About-", "/why-choose-us": "/WhyChooseUs-", "/contact": "/Contact-", "/privacy-policy": "/PrivacyPolicy-", "/resources": "/Resources-", "/resources/what-happens-in-three-free-quran-trial-classes": "/ResourceArticle-", ...Object.fromEntries(policyRoutes.map((route) => [route, "/PolicyPage-"])) };
+const port = Number(process.env.AUDIT_DEBUG_PORT || 9333);
 
 await mkdir(outputDir, { recursive: true });
 const server = createServer(async (request, response) => {
@@ -66,7 +66,7 @@ const pending = new Map();
 const consoleErrors = [];
 socket.addEventListener("message", ({ data }) => {
   const message = JSON.parse(data);
-  if (message.method === "Runtime.exceptionThrown") consoleErrors.push(message.params.exceptionDetails.text);
+  if (message.method === "Runtime.exceptionThrown") consoleErrors.push(message.params.exceptionDetails.exception?.description || message.params.exceptionDetails.text);
   if (message.method === "Runtime.consoleAPICalled" && message.params.type === "error") consoleErrors.push(message.params.args.map((arg) => arg.value || arg.description).join(" "));
   if (!message.id || !pending.has(message.id)) return;
   const { resolve, reject } = pending.get(message.id);
@@ -144,6 +144,7 @@ for (const item of results) console.log(`${item.route.padEnd(22)} ${String(item.
 const failures = results.flatMap((item) => {
   const reasons = [];
   if (item.scrollWidth > item.viewport || item.bodyScrollWidth > item.viewport) reasons.push(`document overflow (client=${item.viewport}, document=${item.scrollWidth}, body=${item.bodyScrollWidth})`);
+  if (item.consoleErrors.length) reasons.push(`browser console errors: ${item.consoleErrors.join(" | ")}`);
   if (item.route === "/free-trial" && (!item.stickyProgress || item.stickyProgress.overlap > 0)) reasons.push(item.stickyProgress ? `sticky overlap (${item.stickyProgress.overlap}px)` : "sticky measurement unavailable");
   return reasons.map((reason) => `${item.route} at ${item.width}px: ${reason}`);
 });

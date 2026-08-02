@@ -3,7 +3,7 @@ import { SITE_CONFIG, NAVIGATION_LINKS, siteEmails, siteMailto } from "../config
 import { Link } from "../lib/router";
 import { Icon } from "./Icon";
 
-const academy = [{ label: "About", path: "/about" }, { label: "Why Choose Us", path: "/why-choose-us" }, { label: "Pricing", path: "/pricing" }, { label: "Free Trial", path: "/free-trial" }, { label: "Contact", path: "/contact" }];
+const academy = [{ label: "About", path: "/about" }, { label: "Why Choose Us", path: "/why-choose-us" }, { label: "Resources", path: "/resources" }, { label: "Pricing", path: "/pricing" }, { label: "Free Trial", path: "/free-trial" }, { label: "Contact", path: "/contact" }];
 const policyLabels: Record<string, string> = { "/terms-and-conditions": "Terms & Conditions" };
 const FooterLink: React.FC<{ label: string; path: string }> = ({ label, path }) => <li><Link to={path} activeClassName="footer-active-route" className="flex min-h-10 items-center text-sm text-white/85 hover:text-white">{label}</Link></li>;
 

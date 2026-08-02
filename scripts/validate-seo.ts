@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { canonicalUrlFor, PAGE_METADATA, PUBLIC_ROUTES, SOCIAL_IMAGE_URL } from "../src/config/metadata";
 import { inspectRouteHtml } from "./html-validation";
+import { DRAFT_RESOURCES, PUBLISHED_RESOURCES, resourceRoute } from "../src/content/resources";
 
 const distRoot = path.join(process.cwd(), "dist");
 const internalLinks = new Set(PUBLIC_ROUTES);
@@ -36,6 +37,14 @@ for (const route of PUBLIC_ROUTES) {
   assert.equal(attribute(html, /<meta\s+name="twitter:image"\s+content="([^"]+)"/i, `${route}: twitter:image`), SOCIAL_IMAGE_URL);
   assert.doesNotMatch(html, /<meta[^>]+(?:noindex|nofollow)/i, `${route}: indexable`);
   for (const script of html.matchAll(/<script\s+type="application\/ld\+json">([\s\S]*?)<\/script>/gi)) JSON.parse(script[1]);
+  if (route.startsWith("/resources/")) {
+    const structuredData = [...html.matchAll(/<script\s+type="application\/ld\+json">([\s\S]*?)<\/script>/gi)].map((script) => JSON.parse(script[1]) as { "@type"?: string });
+    assert.equal(structuredData.filter((data) => data["@type"] === "Article").length, 1, `${route}: one Article structured-data record`);
+    assert.equal(structuredData.filter((data) => data["@type"] === "BreadcrumbList").length, 1, `${route}: visible breadcrumbs have one BreadcrumbList record`);
+    assert.match(html, /<nav\s+aria-label="Breadcrumb"/, `${route}: structured breadcrumbs are visible`);
+    assert.match(html, /By\s+<strong[^>]*>[^<]+<\/strong>/, `${route}: visible author`);
+    assert.match(html, /Updated\s+<time/, `${route}: visible updated date`);
+  }
   for (const link of html.matchAll(/<a\b[^>]*href="(\/[^"]*)"/gi)) {
     const pathname = link[1].split(/[?#]/)[0];
     if (pathname.startsWith("/brand/") || pathname.startsWith("/assets/")) continue;
@@ -48,5 +57,12 @@ const sitemap = await readFile(path.join(distRoot, "sitemap.xml"), "utf8");
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
 assert.deepEqual(sitemapUrls, PUBLIC_ROUTES.map(canonicalUrlFor), "sitemap URLs match generated public routes");
 assert.equal(titles.size, PUBLIC_ROUTES.length, "all route titles are unique");
+const rss = await readFile(path.join(distRoot, "rss.xml"), "utf8");
+assert.doesNotThrow(() => { assert.match(rss, /^<\?xml[^>]+>\s*<rss\b[\s\S]*<\/rss>\s*$/); }, "RSS is well-formed XML-shaped output");
+for (const resource of PUBLISHED_RESOURCES) assert.match(rss, new RegExp(canonicalUrlFor(resourceRoute(resource))), `${resource.slug}: present in RSS`);
+for (const resource of DRAFT_RESOURCES) {
+  assert.doesNotMatch(sitemap, new RegExp(resource.slug), `${resource.slug}: draft excluded from sitemap`);
+  assert.doesNotMatch(rss, new RegExp(resource.slug), `${resource.slug}: draft excluded from RSS`);
+}
 console.table(report);
 console.log(`SEO output validation passed for ${PUBLIC_ROUTES.length} routes.`);
