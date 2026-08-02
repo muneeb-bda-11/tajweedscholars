@@ -35,7 +35,9 @@ export function prefetchRoute(to: string) {
 }
 
 export function prefetchPriorityRoutesWhenIdle() {
-  const run = () => ["/free-trial", "/programs", "/pricing"].forEach(prefetchRoute);
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (connection?.saveData || connection?.effectiveType?.includes("2g")) return;
+  const run = () => ["/programs", "/pricing"].forEach(prefetchRoute);
   if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 2500 });
   else globalThis.setTimeout(run, 1200);
 }

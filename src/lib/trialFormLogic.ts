@@ -1,4 +1,4 @@
-import { isPossiblePhoneNumber } from "react-phone-number-input";
+import { isPossiblePhoneNumber } from "libphonenumber-js/min";
 import { CANONICAL_VALUES, requiresGuardian, type AgeGroup, type LearnerType, type MainGoal, type PreferredDay, type PreferredTime } from "../shared/trialOptions";
 import type { TrialSubmissionPayload } from "./trialSubmission";
 

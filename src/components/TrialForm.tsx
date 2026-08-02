@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { getCountries, getCountryCallingCode, parsePhoneNumber, type Country } from "react-phone-number-input";
+import { getCountries, getCountryCallingCode, parsePhoneNumber, type CountryCode as Country } from "libphonenumber-js/min";
 import countryLabels from "react-phone-number-input/locale/en";
 import { Icon } from "./Icon";
 import { submitTrialRequest, trialSubmissionStatus, TrialSubmissionError } from "../lib/trialSubmission";
 import { AGE_GROUP_OPTIONS, LEARNER_TYPE_OPTIONS, MAIN_GOAL_OPTIONS, PREFERRED_DAY_OPTIONS, PREFERRED_TIME_OPTIONS, type AgeGroup, type LearnerType, type MainGoal } from "../shared/trialOptions";
 import { Link } from "../lib/router";
 import { SearchCombobox } from "./SearchCombobox";
-import { CountryFlag, PhoneCountrySelect } from "./PhoneCountrySelect";
+import { CountryFlag, PhoneCountrySelect, preloadCountryFlags } from "./PhoneCountrySelect";
 import { addRecentIdentifier, getNationalPhonePlaceholder, getTimeZoneValues, groupTimeZones, learnerNameLabel, newSubmissionMeta, normalizePhoneEntry, orderCountries, readSessionIdentifiers, regionField, resolveDeviceDefaults, timeZoneLabel, writeSessionIdentifiers } from "../lib/trialUx";
 import { requiresGuardian } from "../shared/trialOptions";
 import { buildTrialSubmissionPayload, getVisibleErrors, nextLearnerData, stepForField, validateTrialForm, withLearnerType, type AttemptedSteps, type TrialErrors, type TrialField, type TrialFormData } from "../lib/trialFormLogic";
@@ -60,7 +60,7 @@ export const TrialForm: React.FC = () => {
   const reveal = (node: HTMLElement | null) => { node?.scrollIntoView({ behavior: "smooth", block: "center" }); node?.focus({ preventScroll: true }); };
   const showErrors = (next: Errors) => { setErrors(next); const first = Object.keys(next)[0]; requestAnimationFrame(() => reveal(document.getElementById(first))); };
   const showStep = (value: number) => { setStep(value); if(value===3)setAttemptedSteps(v=>({...v,3:false})); requestAnimationFrame(() => reveal(headingRef.current)); };
-  const advanceCurrentStep = () => { const current = step as 1 | 2; setAttemptedSteps(v=>({...v,[current]:true})); setMessage(""); if (status === "error") setStatus("idle"); const nextErrors = validateTrialForm(data, current); if (Object.keys(nextErrors).length) return showErrors(nextErrors); showStep(current + 1); };
+  const advanceCurrentStep = async () => { const current = step as 1 | 2; setAttemptedSteps(v=>({...v,[current]:true})); setMessage(""); if (status === "error") setStatus("idle"); const nextErrors = validateTrialForm(data, current); if (Object.keys(nextErrors).length) return showErrors(nextErrors); if (current === 1) await preloadCountryFlags(); showStep(current + 1); };
   const chooseCountry = (code: string) => { const match = countries.find((country) => country.code === code); if (!match) return; setData((v) => ({ ...v, countryName: match.name, countryCode: match.code })); if (!phoneCountryEdited) setPhoneCountry(match.code); setRecentCountries((current) => { const next = addRecentIdentifier(current, code, countryCodes) as Country[]; writeSessionIdentifiers(RECENT_COUNTRIES_KEY, next, countryCodes); return next; }); setErrors((v) => ({ ...v, countryName: undefined })); };
   const updatePhoneEntry = (value: string) => { const normalized = normalizePhoneEntry(value, phoneCountry); if (normalized.country && normalized.country !== phoneCountry) { setPhoneCountry(normalized.country); setPhoneCountryEdited(true); } setPhoneNational(normalized.national); update("whatsapp", normalized.e164); };
   const changePhoneCountry = (country: Country) => { setPhoneCountry(country); setPhoneCountryEdited(true); const normalized = normalizePhoneEntry(phoneNational, country); setPhoneNational(normalized.national); update("whatsapp", normalized.e164); };
@@ -68,8 +68,8 @@ export const TrialForm: React.FC = () => {
     submitting.current = true; setSubmissionMessage(trialSubmissionStatus(0)); setStatus("submitting"); setMessage(""); const progressTimers = [setTimeout(() => setSubmissionMessage(trialSubmissionStatus(700)), 700), setTimeout(() => setSubmissionMessage(trialSubmissionStatus(2500)), 2500)]; try { const result = await submitTrialRequest(payload); setLeadId(result.leadId); setStatus("success"); }
     catch (error) { setStatus("error"); setMessage(error instanceof TrialSubmissionError && Object.keys(error.fieldErrors).length ? "Please review the field highlighted below." : error instanceof Error ? error.message : "We could not submit your request."); if (error instanceof TrialSubmissionError && Object.keys(error.fieldErrors).length) { const map: Record<string, Field> = { countryCode: "countryName", countryName: "countryName", whatsapp: "whatsapp", notes: "notes", learnerType: "learnerType", ageGroup: "ageGroup", mainGoal: "mainGoal", contactName: "contactName", guardianName: "guardianName", region: "region", timeZone: "timeZone", email: "email", preferredDays: "preferredDays", preferredTime: "preferredTime", consent: "consent" }; const mapped: Errors = {}; Object.entries(error.fieldErrors).forEach(([key, value]) => { if (map[key]) mapped[map[key]] = value; }); const first = Object.keys(mapped)[0] as Field | undefined; setApiErrorFields(new Set(Object.keys(mapped) as Field[])); setStep(stepForField(first)); setErrors(mapped); requestAnimationFrame(() => reveal(first ? document.getElementById(first) : headingRef.current)); } } finally { progressTimers.forEach(clearTimeout); submitting.current = false; }
   };
-  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); if (step < 3) { advanceCurrentStep(); return; } void submitFinalTrialRequest(); };
-  const next = advanceCurrentStep;
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); if (step < 3) { void advanceCurrentStep(); return; } void submitFinalTrialRequest(); };
+  const next = () => { void advanceCurrentStep(); };
   const submit = handleFormSubmit;
   const visibleErrors=getVisibleErrors(step as 1|2|3,errors,attemptedSteps,apiErrorFields); const described = (field: Field) => visibleErrors[field] ? `${field}-error` : undefined, input = (field: Field) => `mt-1.5 min-h-11 w-full rounded-lg border bg-white px-3 text-sm ${visibleErrors[field] ? "border-red-500" : "border-stone-300"}`, choice = (selected: boolean) => `flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-2 text-xs font-semibold sm:px-3 sm:text-sm ${selected ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-stone-300 bg-white text-stone-700"}`;
   const clearCopyTimer = () => { if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current); copyResetTimerRef.current = null; };

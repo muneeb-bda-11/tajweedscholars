@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CountryFlag, PhoneCountrySelect, type PhoneCountryOption } from "./PhoneCountrySelect.tsx";
+import { CountryFlag, PhoneCountrySelect, preloadCountryFlags, type PhoneCountryOption } from "./PhoneCountrySelect.tsx";
 
 const options: PhoneCountryOption[] = [
   { code: "PK", name: "Pakistan" },
   { code: "CD", name: "Congo (Democratic Republic)" }
 ];
+
+await preloadCountryFlags();
 
 const pakistanFlag = renderToStaticMarkup(<CountryFlag country="PK" countryName="Pakistan" />);
 const congoFlag = renderToStaticMarkup(<CountryFlag country="CD" countryName="Congo (Democratic Republic)" />);

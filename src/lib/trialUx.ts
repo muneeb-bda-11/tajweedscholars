@@ -1,6 +1,4 @@
-import { getCountryCallingCode, type Country } from "react-phone-number-input";
-import { getExampleNumber } from "libphonenumber-js";
-import { AsYouType, parsePhoneNumberFromString } from "libphonenumber-js";
+import { AsYouType, getCountryCallingCode, getExampleNumber, parsePhoneNumberFromString, type CountryCode as Country } from "libphonenumber-js/min";
 import examples from "libphonenumber-js/mobile/examples";
 import { rawTimeZones, timeZonesNames } from "@vvo/tzdb";
 
