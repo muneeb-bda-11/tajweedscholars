@@ -1,6 +1,4 @@
 {
   "name": "Tajweed Scholars",
-  "description": "Online Quran Academy for Kids & Adults offering Tajweed, Hifz, and Arabic language classes with verified Sanad and Ijazah certified teachers.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "Live, private one-to-one online Quran classes for children and adults, with three free trial classes."
 }

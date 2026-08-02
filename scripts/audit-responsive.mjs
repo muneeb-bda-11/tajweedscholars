@@ -31,8 +31,9 @@ if (outputRelative.startsWith("..") || resolve(artifactsRoot, outputRelative) !=
 const routes = process.env.AUDIT_ROUTES?.split(",") || ["/", "/programs", "/free-trial", "/pricing", "/kids-quran-classes", "/adult-quran-classes", "/tajweed-course", "/hifz-program"];
 // Warm lazy route chunks at desktop width before collecting narrow-screen results.
 const widths = process.env.AUDIT_WIDTHS?.split(",").map(Number) || [1440, 320, 360, 390, 430, 768];
+const screenshotWidths = new Set([320, 360, 390, 430, 768, 1024, 1440]);
 const policyRoutes = ["/terms-and-conditions", "/payment-policy", "/refund-policy", "/reschedule-policy", "/child-safeguarding", "/recording-policy", "/complaints", "/acceptable-use"];
-const routeSelectors = { "/": "#home-page", "/programs": "#programs-page", "/free-trial": "#free-trial-page", "/pricing": "#pricing-page", "/about": "#about-page", "/why-choose-us": "#why-choose-us-page", "/contact": "#contact-page", "/privacy-policy": "#privacy-policy-page", ...Object.fromEntries(policyRoutes.map((route) => [route, "#policy-page"])) };
+const routeSelectors = { "/": "#home-page", "/programs": "#programs-page", "/free-trial": "[aria-label='Free Trial form progress']", "/pricing": "#pricing-page", "/about": "#about-page", "/why-choose-us": "#why-choose-us-page", "/contact": "#contact-page", "/privacy-policy": "#privacy-policy-page", ...Object.fromEntries(policyRoutes.map((route) => [route, "#policy-page"])) };
 const routeChunks = { "/programs": "/Programs-", "/free-trial": "/FreeTrial-", "/pricing": "/Pricing-", "/about": "/About-", "/why-choose-us": "/WhyChooseUs-", "/contact": "/Contact-", "/privacy-policy": "/PrivacyPolicy-", ...Object.fromEntries(policyRoutes.map((route) => [route, "/PolicyPage-"])) };
 const port = 9333;
 
@@ -115,19 +116,23 @@ for (const width of widths) {
       const sticky = await send("Runtime.evaluate", { returnByValue: true, expression: `(() => {
         const progress = document.querySelector('[aria-label="Free Trial form progress"]');
         const header = document.getElementById('app-header');
-        scrollTo(0, document.getElementById('trial-form-container').offsetTop + 180);
+        const form = document.getElementById('trial-form-container');
+        scrollTo(0, Math.max(0, form.getBoundingClientRect().top + scrollY - header.getBoundingClientRect().height));
         return new Promise((resolve) => setTimeout(() => {
           const progressRect = progress.getBoundingClientRect(), headerRect = header.getBoundingClientRect();
-          resolve({ headerBottom: Math.round(headerRect.bottom), progressTop: Math.round(progressRect.top), overlap: Math.max(0, Math.round(headerRect.bottom - progressRect.top)) });
+          const overlap = progressRect.bottom > headerRect.bottom
+            ? Math.max(0, Math.round(headerRect.bottom - progressRect.top))
+            : 0;
+          resolve({ headerBottom: Math.round(headerRect.bottom), progressTop: Math.round(progressRect.top), overlap });
         }, 150));
       })()` , awaitPromise: true });
       item.stickyProgress = sticky.result.value;
-      if ([320, 360, 390, 430, 1440].includes(width)) {
+      if (screenshotWidths.has(width)) {
         const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
         await writeFile(`${outputDir}/free-trial-sticky-${width}.png`, Buffer.from(shot.data, "base64"));
       }
     }
-    if ([320, 360, 390, 430, 1440].includes(width)) {
+    if (screenshotWidths.has(width)) {
       const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
       const routeName = route === "/" ? "home" : route.slice(1);
       await writeFile(`${outputDir}/${routeName}-${width}.png`, Buffer.from(shot.data, "base64"));
