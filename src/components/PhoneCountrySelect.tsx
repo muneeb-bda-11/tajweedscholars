@@ -1,14 +1,18 @@
 import React, { useCallback, useId, useMemo, useRef, useState } from "react";
-import flags from "react-phone-number-input/flags";
-import { getCountryCallingCode, type Country } from "react-phone-number-input";
+import { getCountryCallingCode, type CountryCode as Country } from "libphonenumber-js/min";
 import { Check, ChevronDown, Globe2 } from "lucide-react";
 import { POPULAR_COUNTRY_CODES } from "../lib/trialUx";
 import { useDismissibleOverlay } from "../lib/useDismissibleOverlay";
 
 export type PhoneCountryOption = { code: Country; name: string; group?: string };
+type FlagComponents = typeof import("react-phone-number-input/flags").default;
+let flagComponents: FlagComponents | undefined;
+export async function preloadCountryFlags() {
+  flagComponents ||= (await import("react-phone-number-input/flags")).default;
+}
 export function CountryFlag({ country, countryName }: { country?: Country; countryName: string }) {
   if (!country) return <span className="inline-flex h-[18px] w-6 shrink-0 items-center justify-center overflow-hidden rounded-sm"><Globe2 aria-hidden="true" className="h-5 w-5" /></span>;
-  const Flag = flags[country];
+  const Flag = flagComponents?.[country];
   return Flag ? <span data-country-flag className="inline-flex h-[18px] w-6 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-stone-200 [&>svg]:block [&>svg]:h-full [&>svg]:w-full" title={countryName}><Flag title="" /></span> : <Globe2 aria-hidden="true" className="h-5 w-5 shrink-0" />;
 }
 

@@ -26,7 +26,7 @@ assert.match(phone, /useDismissibleOverlay/);
 assert.match(phone, /h-\[18px\] w-6 shrink-0/);
 assert.match(phone, /min-h-11 w-\[72px\]/);
 assert.match(phone, /min-w-0 flex-1 truncate/);
-for (const code of ["PK", "GB", "US", "CA", "AU"]) assert.ok(phone.includes("flags[country]"), `${code} uses the fixed SVG flag wrapper`);
+for (const code of ["PK", "GB", "US", "CA", "AU"]) assert.ok(phone.includes("flagComponents?.[country]"), `${code} uses the fixed SVG flag wrapper`);
 
 assert.match(overlay, /document\.addEventListener\("pointerdown", outside\)/);
 assert.match(overlay, /event\.key === "Escape"/);
