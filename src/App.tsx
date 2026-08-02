@@ -8,6 +8,7 @@ import { MobileTrialBar } from "./components/home/MobileTrialBar";
 import { PageMetadata } from "./components/PageMetadata";
 import { RouteFallback } from "./components/RouteFallback";
 import { prefetchPriorityRoutesWhenIdle } from "./lib/routeModules";
+import { PUBLISHED_RESOURCES, resourceRoute } from "./content/resources";
 
 const FreeTrial = lazy(() => import("./pages/FreeTrial").then(m => ({ default: m.FreeTrial })));
 const Pricing = lazy(() => import("./pages/Pricing").then(m => ({ default: m.Pricing })));
@@ -19,6 +20,8 @@ const WhyChooseUs = lazy(() => import("./pages/WhyChooseUs").then(m => ({ defaul
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy").then(m => ({ default: m.PrivacyPolicy })));
 const PolicyPage = lazy(() => import("./pages/PolicyPage").then(m => ({ default: m.PolicyPage })));
 const NotFoundRoute = lazy(() => import("./pages/NotFound").then(m => ({ default: m.NotFoundRoute })));
+const Resources = lazy(() => import("./pages/Resources").then(m => ({ default: m.Resources })));
+const ResourceArticle = lazy(() => import("./pages/ResourceArticle").then(m => ({ default: m.ResourceArticle })));
 
 function AppRoutes({ initialRouteElement }: { initialRouteElement?: React.ReactNode }) {
   const [prerenderedElement, setPrerenderedElement] = useState(initialRouteElement);
@@ -30,6 +33,7 @@ function AppRoutes({ initialRouteElement }: { initialRouteElement?: React.ReactN
     <Route path="/kids-quran-classes" element={<ProgramPage />} /><Route path="/adult-quran-classes" element={<ProgramPage />} /><Route path="/tajweed-course" element={<ProgramPage />} /><Route path="/hifz-program" element={<ProgramPage />} /><Route path="/arabic-language" element={<ProgramPage />} /><Route path="/islamic-studies" element={<ProgramPage />} />
     <Route path="/about" element={<About />} /><Route path="/why-choose-us" element={<WhyChooseUs />} /><Route path="/privacy-policy" element={<PrivacyPolicy />} />
     <Route path="/terms-and-conditions" element={<PolicyPage />} /><Route path="/payment-policy" element={<PolicyPage />} /><Route path="/refund-policy" element={<PolicyPage />} /><Route path="/reschedule-policy" element={<PolicyPage />} /><Route path="/child-safeguarding" element={<PolicyPage />} /><Route path="/recording-policy" element={<PolicyPage />} /><Route path="/complaints" element={<PolicyPage />} /><Route path="/acceptable-use" element={<PolicyPage />} />
+    <Route path="/resources" element={<Resources />} />{PUBLISHED_RESOURCES.map(resource => <Route key={resource.slug} path={resourceRoute(resource)} element={<ResourceArticle resourcePath={resourceRoute(resource)} />} />)}
     <NotFoundRoute />
   </Suspense>;
 }

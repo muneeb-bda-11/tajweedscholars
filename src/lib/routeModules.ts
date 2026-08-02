@@ -1,3 +1,5 @@
+import { PUBLISHED_RESOURCES, resourceRoute } from "../content/resources";
+
 type RouteLoader = () => Promise<unknown>;
 
 export const routeLoaders: Record<string, RouteLoader> = {
@@ -22,6 +24,8 @@ export const routeLoaders: Record<string, RouteLoader> = {
   "/recording-policy": () => import("../pages/PolicyPage"),
   "/complaints": () => import("../pages/PolicyPage"),
   "/acceptable-use": () => import("../pages/PolicyPage"),
+  "/resources": () => import("../pages/Resources"),
+  ...Object.fromEntries(PUBLISHED_RESOURCES.map((resource) => [resourceRoute(resource), () => import("../pages/ResourceArticle")])),
   "*": () => import("../pages/NotFound"),
 };
 

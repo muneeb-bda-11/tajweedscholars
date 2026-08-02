@@ -21,7 +21,7 @@ for (const route of policyRoutes) {
 }
 assert.match(footer + read("../config/site.ts"), /Privacy Policy/);
 
-assert.equal(PUBLIC_ROUTES.length, 22);
+assert.equal(PUBLIC_ROUTES.length, 24);
 assert.equal(new Set(Object.values(PAGE_METADATA).map(({ title }) => title)).size, PUBLIC_ROUTES.length);
 for (const route of PUBLIC_ROUTES) {
   const metadata = PAGE_METADATA[route];

@@ -4,6 +4,7 @@ import {hydrateRoot} from 'react-dom/client';
 import App from './App.tsx';
 import {Home} from './pages/Home';
 import {resolveInitialRoute} from './lib/router';
+import {publishedResourceForPath} from './content/resources';
 import './index.css';
 
 async function loadInitialRoute(path: string): Promise<ReactNode> {
@@ -16,6 +17,8 @@ async function loadInitialRoute(path: string): Promise<ReactNode> {
   if (path === "/why-choose-us") return createElement((await import("./pages/WhyChooseUs")).WhyChooseUs);
   if (path === "/contact") return createElement((await import("./pages/Contact")).Contact);
   if (path === "/privacy-policy") return createElement((await import("./pages/PrivacyPolicy")).PrivacyPolicy);
+  if (path === "/resources") return createElement((await import("./pages/Resources")).Resources);
+  if (publishedResourceForPath(path)) return createElement((await import("./pages/ResourceArticle")).ResourceArticle, { resourcePath: path });
   if (["/terms-and-conditions", "/payment-policy", "/refund-policy", "/reschedule-policy", "/child-safeguarding", "/recording-policy", "/complaints", "/acceptable-use"].includes(path)) return createElement((await import("./pages/PolicyPage")).PolicyPage);
   return createElement((await import("./pages/NotFound")).NotFoundRoute);
 }

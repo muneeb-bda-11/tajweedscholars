@@ -13,7 +13,10 @@ import { WhyChooseUs } from "../src/pages/WhyChooseUs";
 import { Contact } from "../src/pages/Contact";
 import { PrivacyPolicy } from "../src/pages/PrivacyPolicy";
 import { PolicyPage } from "../src/pages/PolicyPage";
+import { Resources } from "../src/pages/Resources";
+import { ResourceArticle } from "../src/pages/ResourceArticle";
 import { canonicalUrlFor, PAGE_METADATA, PUBLIC_ROUTES, SITE_NAME, SOCIAL_IMAGE_URL } from "../src/config/metadata";
+import { PUBLISHED_RESOURCES, publishedResourceForPath, resourceRoute } from "../src/content/resources";
 
 const projectRoot = process.cwd();
 const distRoot = path.join(projectRoot, "dist");
@@ -29,6 +32,8 @@ const componentFor = (route: string): ComponentType => {
   if (route === "/why-choose-us") return WhyChooseUs;
   if (route === "/contact") return Contact;
   if (route === "/privacy-policy") return PrivacyPolicy;
+  if (route === "/resources") return Resources;
+  if (publishedResourceForPath(route)) return ResourceArticle;
   return PolicyPage;
 };
 
@@ -62,9 +67,32 @@ const homeStructuredData = {
 const headFor = (route: string) => {
   const metadata = PAGE_METADATA[route];
   const canonical = canonicalUrlFor(route);
+  const resource = publishedResourceForPath(route);
+  const resourceStructuredData = resource ? [
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: resource.title,
+      description: resource.metaDescription,
+      mainEntityOfPage: canonical,
+      datePublished: resource.publishedDate,
+      dateModified: resource.updatedDate,
+      author: { "@type": "Organization", name: resource.authorName },
+      publisher: { "@type": "Organization", name: SITE_NAME, url: canonicalUrlFor("/") },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: canonicalUrlFor("/") },
+        { "@type": "ListItem", position: 2, name: "Resources", item: canonicalUrlFor("/resources") },
+        { "@type": "ListItem", position: 3, name: resource.title, item: canonical },
+      ],
+    },
+  ] : [];
   const jsonLd = route === "/"
     ? `\n    <script type="application/ld+json">${JSON.stringify(homeStructuredData).replaceAll("<", "\\u003c")}</script>`
-    : "";
+    : resourceStructuredData.map((data) => `\n    <script type="application/ld+json">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script>`).join("");
   return `
     <title>${escapeAttribute(metadata.title)}</title>
     <meta name="description" content="${escapeAttribute(metadata.description)}" />
@@ -92,7 +120,7 @@ const stripTemplateSeo = (html: string) => html
 
 for (const route of PUBLIC_ROUTES) {
   const Page = componentFor(route);
-  const routeElement = createElement(Page);
+  const routeElement = Page === ResourceArticle ? createElement(ResourceArticle, { resourcePath: route }) : createElement(Page);
   const body = renderToString(<StrictMode><App initialPath={route} initialRouteElement={routeElement} /></StrictMode>);
   const html = stripTemplateSeo(template)
     .replace("</head>", `${headFor(route)}\n  </head>`)
@@ -102,4 +130,11 @@ for (const route of PUBLIC_ROUTES) {
   await writeFile(path.join(outputDirectory, "index.html"), html, "utf8");
 }
 
-console.log(`Prerendered ${PUBLIC_ROUTES.length} public routes.`);
+const escapeXml = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${PUBLIC_ROUTES.map((route) => `  <url><loc>${canonicalUrlFor(route)}</loc></url>`).join("\n")}\n</urlset>\n`;
+await writeFile(path.join(distRoot, "sitemap.xml"), sitemap, "utf8");
+
+const rss = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>\n  <title>${SITE_NAME} Resources</title>\n  <link>${canonicalUrlFor("/resources")}</link>\n  <description>Practical guidance for Quran learners and families.</description>\n${PUBLISHED_RESOURCES.map((resource) => `  <item>\n    <title>${escapeXml(resource.title)}</title>\n    <link>${canonicalUrlFor(resourceRoute(resource))}</link>\n    <guid isPermaLink="true">${canonicalUrlFor(resourceRoute(resource))}</guid>\n    <description>${escapeXml(resource.summary)}</description>\n    <pubDate>${new Date(`${resource.publishedDate}T00:00:00Z`).toUTCString()}</pubDate>\n  </item>`).join("\n")}\n</channel></rss>\n`;
+await writeFile(path.join(distRoot, "rss.xml"), rss, "utf8");
+
+console.log(`Prerendered ${PUBLIC_ROUTES.length} public routes and generated sitemap.xml and rss.xml.`);
