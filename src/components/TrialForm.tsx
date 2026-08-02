@@ -34,7 +34,7 @@ const ErrorText = ({ field, errors }: { field: Field; errors: Errors }) => error
 const STEP_HEADINGS = ["Learner details", "Contact details", "Availability"] as const;
 export function TrialProgress({ step }: { step: 1 | 2 | 3 }) {
   const current = `Step ${step} of 3 — ${STEP_HEADINGS[step - 1]}`;
-  return <div className="sticky top-16 z-20 rounded-t-2xl border-b border-stone-200 bg-white/95 px-4 py-3" aria-label="Free Trial form progress">
+  return <div className="sticky top-[75px] z-20 rounded-t-2xl border-b border-stone-200 bg-white/95 px-4 py-3" aria-label="Free Trial form progress">
     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"><p aria-current="step" className="min-w-0 text-xs font-bold text-emerald-800">{current}</p><p className="shrink-0 text-[11px] text-stone-500 sm:text-xs">No payment information</p></div>
     <div className="mt-2 grid grid-cols-3 gap-1" role="progressbar" aria-label={current} aria-valuemin={1} aria-valuemax={3} aria-valuenow={step}>{[1, 2, 3].map((segment) => <span key={segment} aria-hidden="true" data-progress-state={segment <= step ? "complete" : "remaining"} className={`h-1.5 rounded-full ${segment <= step ? "bg-emerald-700" : "bg-stone-200"}`} />)}</div>
   </div>;
