@@ -9,7 +9,7 @@ export const SafeguardingSummary: React.FC = () => <section id="safeguarding-sum
   </div></div>
   <ul className="mt-5 grid gap-3 pl-5 text-sm leading-6 text-stone-700 md:grid-cols-2">
     <li className="list-disc">Teacher checks include identity and verified Sanad/Ijazah credentials, with a signed safeguarding agreement.</li>
-    <li className="list-disc">Parents report concerns through an official contact. During Phase 1, the interim safeguarding lead is the Founder / Operations Lead.</li>
+    <li className="list-disc">Safeguarding is handled by the Founder &amp; Operations Lead. Email info@tajweedscholars.com with the subject “Safeguarding Concern”.</li>
   </ul>
   <Link to="/child-safeguarding" className="mt-5 inline-flex min-h-11 items-center font-bold text-emerald-800 underline underline-offset-4">Read the full Child Safeguarding Policy</Link>
 </section>;

@@ -14,7 +14,7 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
   "/adult-quran-classes": { title: "Private Adult Quran Classes | Tajweed Scholars", description: "Judgment-free, private online Quran and Tajweed classes for adults at every starting level." },
   "/tajweed-course": { title: "Online Tajweed Course | Tajweed Scholars", description: "Study Makharij, Sifaat, Tajweed rules, correction, and advanced recitation in live private classes." },
   "/hifz-program": { title: "Online Hifz Program | Tajweed Scholars", description: "A private Quran memorization pathway structured around Sabaq, Sabqi, Manzil, Tajweed, and regular revision." },
-  "/arabic-language": { title: "Online Arabic Language Classes | Tajweed Scholars", description: "Consultation-based Phase 1 Arabic placement for Quranic Arabic or Modern Standard Arabic learning." },
+  "/arabic-language": { title: "Online Arabic Language Classes | Tajweed Scholars", description: "Arabic Language learning available following an admissions consultation." },
   "/islamic-studies": { title: "Online Islamic Studies Add-on | Tajweed Scholars", description: "Islamic Studies learning available as an add-on with eligible Tajweed Scholars Quran programs." },
   "/pricing": { title: "Online Quran Class Pricing | Tajweed Scholars", description: "Monthly private Quran class plans start from $40, with one-to-five-day and weekend options." },
   "/free-trial": { title: "Book 3 Free Trial Classes | Tajweed Scholars", description: "Book three free private Quran trial classes. Trial 1 includes placement assessment and a real mini-lesson." },

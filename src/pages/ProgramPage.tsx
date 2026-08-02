@@ -16,8 +16,8 @@ const audiences: Record<string, string> = {
 };
 
 const availability: Record<string, string> = {
-  "arabic-language": "Phase 1 enrollment is consultation-based. Admissions will confirm whether a suitable class and teacher are available.",
-  "islamic-studies": "Available in Phase 1 only as an add-on with eligible Quran programs, not as a standalone program. Admissions will confirm eligibility.",
+  "arabic-language": "Available following an admissions consultation.",
+  "islamic-studies": "Available as an add-on for eligible Quran-program learners.",
 };
 
 export const ProgramPage: React.FC = () => {
@@ -45,7 +45,7 @@ export const ProgramPage: React.FC = () => {
             <p className="mt-3 leading-7 text-stone-600">{audiences[program.id]}</p>
             <h2 className="mt-7 font-display text-2xl font-bold">How classes work</h2>
             <p className="mt-3 leading-7 text-stone-600">Live, private one-to-one classes take place through Zoom. Every regular class is 30 minutes, with placement and scheduling confirmed through the three-class free trial process.</p>
-            <p className="mt-5 border-t border-emerald-200 pt-5 text-sm leading-6 text-stone-600">{availability[program.id] || "This is an active Phase 1 program. Teacher assignment and schedule remain subject to suitable placement and availability."}</p>
+            <p className="mt-5 border-t border-emerald-200 pt-5 text-sm leading-6 text-stone-600">{availability[program.id] || "Teacher assignment and schedule remain subject to suitable placement and availability."}</p>
           </aside>
         </div>
 

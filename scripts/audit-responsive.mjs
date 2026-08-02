@@ -31,8 +31,9 @@ if (outputRelative.startsWith("..") || resolve(artifactsRoot, outputRelative) !=
 const routes = process.env.AUDIT_ROUTES?.split(",") || ["/", "/programs", "/free-trial", "/pricing", "/kids-quran-classes", "/adult-quran-classes", "/tajweed-course", "/hifz-program"];
 // Warm lazy route chunks at desktop width before collecting narrow-screen results.
 const widths = process.env.AUDIT_WIDTHS?.split(",").map(Number) || [1440, 320, 360, 390, 430, 768];
-const routeSelectors = { "/": "#home-page", "/programs": "#programs-page", "/free-trial": "#free-trial-page", "/pricing": "#pricing-page" };
-const routeChunks = { "/programs": "/Programs-", "/free-trial": "/FreeTrial-", "/pricing": "/Pricing-" };
+const policyRoutes = ["/terms-and-conditions", "/payment-policy", "/refund-policy", "/reschedule-policy", "/child-safeguarding", "/recording-policy", "/complaints", "/acceptable-use"];
+const routeSelectors = { "/": "#home-page", "/programs": "#programs-page", "/free-trial": "#free-trial-page", "/pricing": "#pricing-page", "/about": "#about-page", "/why-choose-us": "#why-choose-us-page", "/contact": "#contact-page", "/privacy-policy": "#privacy-policy-page", ...Object.fromEntries(policyRoutes.map((route) => [route, "#policy-page"])) };
+const routeChunks = { "/programs": "/Programs-", "/free-trial": "/FreeTrial-", "/pricing": "/Pricing-", "/about": "/About-", "/why-choose-us": "/WhyChooseUs-", "/contact": "/Contact-", "/privacy-policy": "/PrivacyPolicy-", ...Object.fromEntries(policyRoutes.map((route) => [route, "/PolicyPage-"])) };
 const port = 9333;
 
 await mkdir(outputDir, { recursive: true });

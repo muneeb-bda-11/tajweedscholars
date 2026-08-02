@@ -17,7 +17,7 @@ export const Contact: React.FC = () => {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-bold text-emerald-800">Contact</p>
           <h1 className="mt-3 font-display text-4xl font-bold text-stone-950 md:text-5xl">Speak with Tajweed Scholars</h1>
-          <p className="mx-auto mt-5 max-w-2xl leading-7 text-stone-600">Class placement and scheduling are handled through our Free Trial form. For other questions, contact us directly by WhatsApp or email.</p>
+          <p className="mx-auto mt-5 max-w-2xl leading-7 text-stone-600">Class placement and scheduling are handled through our Free Trial form. For other questions, contact us directly by WhatsApp or email. Admissions normally responds within one business day and confirms the next step.</p>
         </div><section className="mx-auto mt-12 max-w-3xl"><h2 className="text-center text-2xl font-bold">Contact FAQ</h2><TrialFaqAccordion faqs={CONTACT_FAQS}/></section>
 
         <div className="mt-12 grid gap-5 md:grid-cols-3">
