@@ -39,6 +39,11 @@ var TRIAL_HEADERS = [
   "Follow-up Due"
 ];
 
+var ATTRIBUTION_HEADERS = [
+  "UTM Source", "UTM Medium", "UTM Campaign", "UTM Content", "UTM Term",
+  "Referrer Host", "Landing Path", "Submission Path", "First Touch At"
+];
+
 var OPERATIONAL_HEADERS = [
   "Founder Alert Status", "Founder Alert Sent At", "User Email Status",
   "User Email Sent At", "Notification Retry Count",
@@ -160,7 +165,7 @@ function doPost(e) {
           sheet.getLastRow() + 1,
           1,
           1,
-          TRIAL_HEADERS.length + OPERATIONAL_HEADERS.length + DISPLAY_HEADERS.length
+          TRIAL_HEADERS.length + ATTRIBUTION_HEADERS.length + OPERATIONAL_HEADERS.length + DISPLAY_HEADERS.length
         ).setValues([rowFor_(leadId, normalized, submittedAtUtc)]);
         queueLeadNotification_(props, hash, leadId, normalized, submittedAtUtc);
         props.setProperty(duplicateKey, leadId);
@@ -225,6 +230,7 @@ function queueLeadNotification_(
     timeZone: lead.timeZone,
     preferredDays: lead.preferredDays,
     preferredTime: lead.preferredTime,
+    attribution: lead.attribution,
     founderSent: false,
     submitterSent: false,
     createdAtUtc: new Date().toISOString()
@@ -378,7 +384,7 @@ function processNotificationJob_(job, row, map, props, pendingKey, maxAttempts) 
 }
 
 function canonicalNotificationHeaderMap_(sheet) {
-  var expected = TRIAL_HEADERS.concat(OPERATIONAL_HEADERS);
+  var expected = TRIAL_HEADERS.concat(ATTRIBUTION_HEADERS, OPERATIONAL_HEADERS);
   if (sheet.getLastColumn() < expected.length) throw new Error("TRIAL_LEADS_OPERATIONAL_HEADERS_MISSING");
   var headers = sheet.getRange(1, 1, 1, expected.length).getDisplayValues()[0];
   if (headers.join("|") !== expected.join("|")) {
@@ -448,7 +454,7 @@ function checkCRMConfiguration() {
       canonicalNotificationHeaderMap_(sheet);
       console.log("Headers valid: true");
       var allHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
-      console.log("Submitted At PKT display column ready: " + (allHeaders.indexOf(DISPLAY_HEADERS[0]) === TRIAL_HEADERS.length + OPERATIONAL_HEADERS.length));
+      console.log("Submitted At PKT display column ready: " + (allHeaders.indexOf(DISPLAY_HEADERS[0]) === TRIAL_HEADERS.length + ATTRIBUTION_HEADERS.length + OPERATIONAL_HEADERS.length));
     }
   }
 }
@@ -617,6 +623,23 @@ function migrateTrialLeadsSheet() {
   return report;
 }
 
+function migrateMarketingAttributionColumns() {
+  var props = PropertiesService.getScriptProperties();
+  var spreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
+  var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
+  if (!sheet) throw new Error("TRIAL_LEADS_SHEET_NOT_FOUND");
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+  var existing = ATTRIBUTION_HEADERS.map(function (header) { return headers.indexOf(header); });
+  if (existing.every(function (index, offset) { return index === TRIAL_HEADERS.length + offset; })) return "Marketing attribution columns already ready.";
+  if (existing.some(function (index) { return index >= 0; })) throw new Error("ATTRIBUTION_HEADERS_PARTIALLY_PRESENT");
+  var core = headers.slice(0, TRIAL_HEADERS.length);
+  if (core.join("|") !== TRIAL_HEADERS.join("|")) throw new Error("TRIAL_LEADS_HEADERS_MISMATCH");
+  sheet.insertColumnsAfter(TRIAL_HEADERS.length, ATTRIBUTION_HEADERS.length);
+  sheet.getRange(1, TRIAL_HEADERS.length + 1, 1, ATTRIBUTION_HEADERS.length).setValues([ATTRIBUTION_HEADERS]).setBackground("#277F68").setFontColor("#FFFFFF").setFontWeight("bold").setHorizontalAlignment("center");
+  SpreadsheetApp.flush();
+  return "Added " + ATTRIBUTION_HEADERS.length + " marketing attribution columns without changing historical rows.";
+}
+
 function parseRequestBody_(e) {
   if (!e || !e.postData || !e.postData.contents) {
     throw new Error("EMPTY_REQUEST");
@@ -701,6 +724,16 @@ function normalizeTrialLead_(body) {
       })
     : body.preferredDays;
 
+  var attributionInput = body.attribution;
+  var attributionInvalid = attributionInput !== undefined && (!attributionInput || typeof attributionInput !== "object" || Array.isArray(attributionInput));
+  var attribution = {};
+  var attributionLimits = { utm_source: 100, utm_medium: 100, utm_campaign: 160, utm_content: 160, utm_term: 160, referrer_host: 253, landing_path: 300, submission_path: 300, first_touch_at: 30 };
+  if (!attributionInvalid && attributionInput) Object.keys(attributionLimits).forEach(function (field) {
+    if (attributionInput[field] === undefined) return;
+    if (typeof attributionInput[field] !== "string") { attributionInvalid = true; return; }
+    attribution[field] = cleanText_(attributionInput[field], attributionLimits[field]);
+  });
+
   return {
     learnerType: learnerTypeMap[body.learnerType] || body.learnerType,
     ageGroup: ageGroupMap[body.ageGroup] || body.ageGroup,
@@ -721,12 +754,19 @@ function normalizeTrialLead_(body) {
     submissionId: cleanText_(body.submissionId, 100),
     honeypot:
       typeof body.honeypot === "string" ? body.honeypot.trim() : "",
-    formStartedAt: Number(body.formStartedAt)
+    formStartedAt: Number(body.formStartedAt),
+    attribution: attribution,
+    attributionInvalid: attributionInvalid
   };
 }
 
 function validateTrialLead_(lead) {
   var errors = {};
+  if (lead.attributionInvalid) errors.attribution = "Invalid attribution data.";
+  var attribution = lead.attribution || {};
+  if (attribution.referrer_host && (!/^[a-z0-9.-]+$/i.test(attribution.referrer_host) || /[\/:?#]/.test(attribution.referrer_host))) errors.attribution = "Invalid attribution data.";
+  ["landing_path", "submission_path"].forEach(function (field) { if (attribution[field] && (attribution[field].charAt(0) !== "/" || attribution[field].indexOf("//") === 0 || /[?#]/.test(attribution[field]))) errors.attribution = "Invalid attribution data."; });
+  if (attribution.first_touch_at && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(attribution.first_touch_at) || isNaN(new Date(attribution.first_touch_at).getTime()))) errors.attribution = "Invalid attribution data.";
 
   if (ENUMS.learnerType.indexOf(lead.learnerType) < 0) {
     errors.learnerType = "Choose a valid learner type.";
@@ -811,6 +851,7 @@ function validateTrialLead_(lead) {
 function rowFor_(leadId, lead, submittedAtUtc) {
   var ageGroup = canonicalAgeGroup_(lead.ageGroup);
   var view = presentationValues_(lead);
+  var attribution = lead.attribution || {};
   return [
     leadId,
     submittedAtUtc || new Date().toISOString(),
@@ -832,6 +873,15 @@ function rowFor_(leadId, lead, submittedAtUtc) {
     view.notes,
     "Yes",
     "",
+    safe_(attribution.utm_source || ""),
+    safe_(attribution.utm_medium || ""),
+    safe_(attribution.utm_campaign || ""),
+    safe_(attribution.utm_content || ""),
+    safe_(attribution.utm_term || ""),
+    safe_(attribution.referrer_host || ""),
+    safe_(attribution.landing_path || ""),
+    safe_(attribution.submission_path || ""),
+    safe_(attribution.first_touch_at || ""),
     "Queued", "", "Queued", "", 0, "", "", "", "",
     new Date(submittedAtUtc || new Date().toISOString())
   ];
@@ -873,7 +923,7 @@ function setupTrialLeadSystem() {
 
 function verifyPhase1AdmissionsSetup() {
   var props = PropertiesService.getScriptProperties();
-  var result = { ageGroupColumnFound: false, ageGroupPlainTextFormatReady: false, operationalColumnsReady: false, submittedAtPktReady: false, activityLogReady: false, notificationTriggerReady: false };
+  var result = { ageGroupColumnFound: false, ageGroupPlainTextFormatReady: false, attributionColumnsReady: false, operationalColumnsReady: false, submittedAtPktReady: false, activityLogReady: false, notificationTriggerReady: false };
   var spreadsheetId = props.getProperty("SPREADSHEET_ID");
   if (spreadsheetId) {
     var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
@@ -882,8 +932,9 @@ function verifyPhase1AdmissionsSetup() {
       var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
       var ageIndex = headers.indexOf("Age Group");
       result.ageGroupColumnFound = ageIndex >= 0;
+      result.attributionColumnsReady = ATTRIBUTION_HEADERS.every(function (header, offset) { return headers.indexOf(header) === TRIAL_HEADERS.length + offset; });
       result.operationalColumnsReady = OPERATIONAL_HEADERS.every(function (header) { return headers.indexOf(header) >= 0; });
-      result.submittedAtPktReady = headers.indexOf(DISPLAY_HEADERS[0]) === TRIAL_HEADERS.length + OPERATIONAL_HEADERS.length;
+      result.submittedAtPktReady = headers.indexOf(DISPLAY_HEADERS[0]) === TRIAL_HEADERS.length + ATTRIBUTION_HEADERS.length + OPERATIONAL_HEADERS.length;
       if (ageIndex >= 0 && sheet.getMaxRows() > 1) result.ageGroupPlainTextFormatReady = sheet.getRange(2, ageIndex + 1, sheet.getMaxRows() - 1, 1).getNumberFormats().every(function (row) { return row[0] === "@"; });
     }
     result.activityLogReady = Boolean(spreadsheet.getSheetByName(props.getProperty("ACTIVITY_LOG_SHEET_NAME") || ACTIVITY_SHEET_DEFAULT));
@@ -957,7 +1008,7 @@ function updateCell_(sheet, row, map, header, value) { sheet.getRange(row, map[h
 
 function leadFromRow_(row, map) {
   var storedAge = row[map["Age Group"]];
-  return { leadId: String(row[map["Lead ID"]] || ""), receivedAt: row[map["Submitted At UTC"]], learnerType: String(row[map["Learner Type"]] || ""), ageGroup: repairedAgeGroup_(storedAge, "") || String(storedAge || ""), mainGoal: String(row[map["Main Goal"]] || ""), contactName: String(row[map["Learner or Parent Name"]] || ""), guardianName: String(row[map["Guardian Name"]] || ""), countryCode: String(row[map["Country Code"]] || ""), countryName: String(row[map["Country"]] || ""), region: String(row[map["State / Province / Region"]] || ""), timeZone: String(row[map["Time Zone"]] || ""), whatsapp: String(row[map["WhatsApp"]] || ""), email: String(row[map["Email"]] || ""), preferredDays: String(row[map["Preferred Days"]] || "").split(/,\s*/).filter(Boolean), preferredTime: String(row[map["Preferred Time"]] || ""), notes: String(row[map["Notes"]] || ""), spreadsheetUrl: "https://docs.google.com/spreadsheets/d/" + requiredProperty_(PropertiesService.getScriptProperties(), "SPREADSHEET_ID") };
+  return { leadId: String(row[map["Lead ID"]] || ""), receivedAt: row[map["Submitted At UTC"]], learnerType: String(row[map["Learner Type"]] || ""), ageGroup: repairedAgeGroup_(storedAge, "") || String(storedAge || ""), mainGoal: String(row[map["Main Goal"]] || ""), contactName: String(row[map["Learner or Parent Name"]] || ""), guardianName: String(row[map["Guardian Name"]] || ""), countryCode: String(row[map["Country Code"]] || ""), countryName: String(row[map["Country"]] || ""), region: String(row[map["State / Province / Region"]] || ""), timeZone: String(row[map["Time Zone"]] || ""), whatsapp: String(row[map["WhatsApp"]] || ""), email: String(row[map["Email"]] || ""), preferredDays: String(row[map["Preferred Days"]] || "").split(/,\s*/).filter(Boolean), preferredTime: String(row[map["Preferred Time"]] || ""), notes: String(row[map["Notes"]] || ""), attribution: { utm_source: String(row[map["UTM Source"]] || ""), utm_medium: String(row[map["UTM Medium"]] || ""), utm_campaign: String(row[map["UTM Campaign"]] || ""), utm_content: String(row[map["UTM Content"]] || ""), utm_term: String(row[map["UTM Term"]] || ""), referrer_host: String(row[map["Referrer Host"]] || ""), landing_path: String(row[map["Landing Path"]] || ""), submission_path: String(row[map["Submission Path"]] || ""), first_touch_at: String(row[map["First Touch At"]] || "") }, spreadsheetUrl: "https://docs.google.com/spreadsheets/d/" + requiredProperty_(PropertiesService.getScriptProperties(), "SPREADSHEET_ID") };
 }
 
 function logActivity_(spreadsheet, props, leadId, event, status, duration, attempt, errorCode, errorMessage) {
@@ -965,19 +1016,20 @@ function logActivity_(spreadsheet, props, leadId, event, status, duration, attem
 }
 
 function assertHeaders_(sheet) {
+  var expected = TRIAL_HEADERS.concat(ATTRIBUTION_HEADERS);
   var actual = sheet
-    .getRange(1, 1, 1, TRIAL_HEADERS.length)
+    .getRange(1, 1, 1, expected.length)
     .getDisplayValues()[0];
 
-  if (actual.join("|") !== TRIAL_HEADERS.join("|")) {
+  if (actual.join("|") !== expected.join("|")) {
     throw new Error(
-      "Trial Leads headers do not match. Run migrateTrialLeadsSheet first."
+      "Trial Leads headers do not match. Run migrateMarketingAttributionColumns first."
     );
   }
 }
 
 function ensureOperationalHeaders_(sheet) {
-  var lastColumn = Math.max(sheet.getLastColumn(), TRIAL_HEADERS.length);
+  var lastColumn = Math.max(sheet.getLastColumn(), TRIAL_HEADERS.length + ATTRIBUTION_HEADERS.length);
   var headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0];
   OPERATIONAL_HEADERS.forEach(function (header) {
     if (headers.indexOf(header) < 0) {
@@ -989,7 +1041,7 @@ function ensureOperationalHeaders_(sheet) {
 }
 
 function ensureSubmittedAtPktDisplay_(spreadsheet, sheet, props) {
-  var expectedColumn = TRIAL_HEADERS.length + OPERATIONAL_HEADERS.length + 1;
+  var expectedColumn = TRIAL_HEADERS.length + ATTRIBUTION_HEADERS.length + OPERATIONAL_HEADERS.length + 1;
   var lastColumn = Math.max(sheet.getLastColumn(), expectedColumn - 1);
   var headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0];
   var existingIndex = headers.indexOf(DISPLAY_HEADERS[0]);
@@ -1178,6 +1230,18 @@ function json_(status, ok, code, message, fieldErrors, leadId) {
 
 // Phase 1 notification presentation overrides. Kept at the end so deployments
 // upgraded from the original script retain the webhook and validation contract.
+function marketingAttributionRows_(lead) {
+  var attribution = lead.attribution || {};
+  var candidates = [
+    ["UTM source", attribution.utm_source], ["UTM medium", attribution.utm_medium],
+    ["UTM campaign", attribution.utm_campaign], ["UTM content", attribution.utm_content],
+    ["UTM term", attribution.utm_term], ["Referrer host", attribution.referrer_host],
+    ["Landing path", attribution.landing_path], ["Submission path", attribution.submission_path],
+    ["First touch", attribution.first_touch_at]
+  ].filter(function (row) { return Boolean(row[1]); });
+  return candidates.length ? candidates : [["Source", "Direct / Unknown"]];
+}
+
 function sendFounderLeadEmail_(lead, props) {
   var founderEmail = requiredProperty_(props, "FOUNDER_EMAIL");
   var replyToEmail = requiredProperty_(props, "REPLY_TO_EMAIL");
@@ -1187,9 +1251,10 @@ function sendFounderLeadEmail_(lead, props) {
   var wa = buildWhatsAppUrl_(lead.whatsapp, "Assalamu alaikum, this is Muneeb from Tajweed Scholars. We received your request for three free trial classes.");
   var summaryRows = [["Lead reference", lead.leadId], ["Learner type", view.learner], ["Age group", view.ageGroup], ["Main goal", view.goal], ["Received", received]];
   var detailRows = [["Name", lead.contactName], ["Guardian", view.guardian], ["WhatsApp", lead.whatsapp], ["Email", lead.email], ["Country", lead.countryName + " (" + lead.countryCode + ")"], ["Region", view.region], ["Time zone", lead.timeZone], ["Preferred days", view.preferredDays], ["Preferred time", view.preferredTime], ["Notes", view.notes]];
-  var plain = "ADMISSIONS ALERT\nNew Trial Request\n\n" + summaryRows.concat(detailRows).map(function (row) { return row[0] + ": " + row[1]; }).join("\n") + "\n\nMessage on WhatsApp: " + wa + "\nReply by Email: mailto:" + lead.email + "\nOpen CRM: " + lead.spreadsheetUrl;
+  var attributionRows = marketingAttributionRows_(lead);
+  var plain = "ADMISSIONS ALERT\nNew Trial Request\n\n" + summaryRows.concat(detailRows).map(function (row) { return row[0] + ": " + row[1]; }).join("\n") + "\n\nMARKETING ATTRIBUTION\n" + attributionRows.map(function (row) { return row[0] + ": " + row[1]; }).join("\n") + "\n\nMessage on WhatsApp: " + wa + "\nReply by Email: mailto:" + lead.email + "\nOpen CRM: " + lead.spreadsheetUrl;
   var actions = '<table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;margin-top:24px"><tr><td style="padding:0 6px 8px 0"><a href="' + htmlEscape_(wa) + '" style="' + emailButtonStyle_("#277F68", "#FFFFFF", "#277F68") + '">Message on WhatsApp</a></td><td style="padding:0 6px 8px"><a href="mailto:' + htmlEscape_(lead.email) + '" style="' + emailButtonStyle_("#FFFFFF", "#277F68", "#277F68") + '">Reply by Email</a></td><td style="padding:0 0 8px 6px"><a href="' + htmlEscape_(lead.spreadsheetUrl) + '" style="' + emailButtonStyle_("#AE8F6D", "#FFFFFF", "#AE8F6D") + '">Open CRM</a></td></tr></table>';
-  var content = '<p style="margin:0 0 18px;color:#1F2937">A new trial request needs admissions follow-up.</p>' + emailDataTable_(summaryRows, true) + '<h2 style="margin:26px 0 10px;font-size:18px;color:#277F68">Full information</h2>' + emailDataTable_(detailRows, false) + actions;
+  var content = '<p style="margin:0 0 18px;color:#1F2937">A new trial request needs admissions follow-up.</p>' + emailDataTable_(summaryRows, true) + '<h2 style="margin:26px 0 10px;font-size:18px;color:#277F68">Full information</h2>' + emailDataTable_(detailRows, false) + '<h2 style="margin:26px 0 10px;font-size:18px;color:#277F68">Marketing Attribution</h2>' + emailDataTable_(attributionRows, false) + actions;
   var html = emailShell_("ADMISSIONS ALERT", "New Trial Request", content, replyToEmail, props);
   GmailApp.sendEmail(founderEmail, founderEmailSubject_(lead.leadId), plain, emailSendOptions_(html, senderAlias, replyToEmail, props));
 }

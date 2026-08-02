@@ -4,6 +4,7 @@ import { URL } from "node:url";
 import { getCountries, isPossiblePhoneNumber } from "react-phone-number-input";
 import type { TrialSubmissionPayload } from "../src/lib/trialSubmission";
 import { CANONICAL_VALUES, requiresGuardian } from "../src/shared/trialOptions.js";
+import { ATTRIBUTION_FIELDS, ATTRIBUTION_LIMITS, isIsoTimestamp, sanitizeAttributionValue, sanitizePath, type MarketingAttribution } from "../src/shared/attribution.js";
 
 type ApiRequest = IncomingMessage & { body?: unknown }; type FieldErrors = Record<string, string>;
 const MAX_BODY_BYTES = 16_384, UPSTREAM_TIMEOUT_MS = 15_000, MAX_REDIRECTS = 5, ISO_COUNTRIES = new Set<string>(getCountries());
@@ -22,6 +23,35 @@ const VALUE_MAPS = {
 const trim = (value: unknown) => typeof value === "string" ? value.trim() : value;
 const mapped = (map: Record<string, string>, value: unknown) => typeof value === "string" ? map[value] ?? value : value;
 
+export function normalizeAttribution(value: unknown): unknown {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const input = value as Record<string, unknown>, output: Record<string, unknown> = {};
+  for (const field of ATTRIBUTION_FIELDS) {
+    const current = input[field];
+    if (current === undefined) continue;
+    output[field] = typeof current === "string"
+      ? (field === "landing_path" || field === "submission_path" ? sanitizePath(current) : sanitizeAttributionValue(current, ATTRIBUTION_LIMITS[field]))
+      : current;
+  }
+  return output;
+}
+
+const validateAttribution = (value: unknown, errors: FieldErrors): MarketingAttribution | undefined => {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== "object" || Array.isArray(value)) { errors.attribution = "Invalid attribution data."; return undefined; }
+  const input = value as Record<string, unknown>, result: MarketingAttribution = {};
+  for (const field of ATTRIBUTION_FIELDS) {
+    const current = input[field]; if (current === undefined || current === "") continue;
+    if (typeof current !== "string" || current.length > ATTRIBUTION_LIMITS[field]) { errors[`attribution.${field}`] = `Invalid ${field}.`; continue; }
+    if ((field === "landing_path" || field === "submission_path") && (!current.startsWith("/") || current.startsWith("//") || /[?#]/.test(current))) { errors[`attribution.${field}`] = `Invalid ${field}.`; continue; }
+    if (field === "referrer_host" && (!/^(?:[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?)$/i.test(current) || /[/:?#]/.test(current))) { errors[`attribution.${field}`] = "Invalid referrer_host."; continue; }
+    if (field === "first_touch_at" && !isIsoTimestamp(current)) { errors[`attribution.${field}`] = "Invalid first_touch_at."; continue; }
+    result[field] = current;
+  }
+  return result;
+};
+
 export function normalizeTrialPayload(value: unknown): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
   const body = value as Record<string, unknown>;
@@ -31,7 +61,7 @@ export function normalizeTrialPayload(value: unknown): unknown {
     whatsapp: trim(body.whatsapp), email: typeof body.email === "string" ? body.email.trim().toLowerCase() : body.email,
     preferredDays: Array.isArray(body.preferredDays) ? body.preferredDays.map((day) => mapped(VALUE_MAPS.preferredDays, day)) : body.preferredDays,
     preferredTime: mapped(VALUE_MAPS.preferredTime, body.preferredTime), notes: trim(body.notes), consent: body.consent,
-    submissionId: body.submissionId, honeypot: body.honeypot, formStartedAt: body.formStartedAt
+    submissionId: body.submissionId, honeypot: body.honeypot, formStartedAt: body.formStartedAt, attribution: normalizeAttribution(body.attribution)
   };
 }
 
@@ -53,8 +83,9 @@ export function validateTrialPayload(value: unknown): { payload?: TrialSubmissio
   if (!text(body.notes, 1000, false)) errors.notes = "Notes must be 1000 characters or fewer."; if (body.consent !== true) errors.consent = "Consent is required.";
   if (!text(body.submissionId, 100)) errors.submissionId = "Invalid submission identifier."; if (body.honeypot !== "") errors.honeypot = "Invalid submission.";
   if (typeof body.formStartedAt !== "number" || !Number.isFinite(body.formStartedAt) || body.formStartedAt <= 0 || body.formStartedAt > Date.now()) errors.formStartedAt = "Invalid form start time.";
+  const attribution = validateAttribution(body.attribution, errors);
   if (Object.keys(errors).length) return { fieldErrors: errors };
-  return { payload: { learnerType: body.learnerType as TrialSubmissionPayload["learnerType"], ageGroup: body.ageGroup as TrialSubmissionPayload["ageGroup"], mainGoal: body.mainGoal as TrialSubmissionPayload["mainGoal"], contactName: String(body.contactName).trim(), guardianName: guardianRequired ? String(body.guardianName).trim() : "", countryCode: String(body.countryCode), countryName: String(body.countryName).trim(), region: String(body.region).trim(), timeZone: String(body.timeZone).trim(), whatsapp: String(body.whatsapp), email: normalizedEmail, preferredDays: [...body.preferredDays as TrialSubmissionPayload["preferredDays"]], preferredTime: body.preferredTime as TrialSubmissionPayload["preferredTime"], notes: String(body.notes).trim(), consent: true, submissionId: String(body.submissionId), honeypot: "", formStartedAt: body.formStartedAt as number }, fieldErrors: {} };
+  return { payload: { learnerType: body.learnerType as TrialSubmissionPayload["learnerType"], ageGroup: body.ageGroup as TrialSubmissionPayload["ageGroup"], mainGoal: body.mainGoal as TrialSubmissionPayload["mainGoal"], contactName: String(body.contactName).trim(), guardianName: guardianRequired ? String(body.guardianName).trim() : "", countryCode: String(body.countryCode), countryName: String(body.countryName).trim(), region: String(body.region).trim(), timeZone: String(body.timeZone).trim(), whatsapp: String(body.whatsapp), email: normalizedEmail, preferredDays: [...body.preferredDays as TrialSubmissionPayload["preferredDays"]], preferredTime: body.preferredTime as TrialSubmissionPayload["preferredTime"], notes: String(body.notes).trim(), consent: true, submissionId: String(body.submissionId), honeypot: "", formStartedAt: body.formStartedAt as number, ...(attribution ? { attribution } : {}) }, fieldErrors: {} };
 }
 
 export type UpstreamResult = { statusCode: number; body: string };

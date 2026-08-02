@@ -5,6 +5,7 @@ import App from './App.tsx';
 import {Home} from './pages/Home';
 import {resolveInitialRoute} from './lib/router';
 import {publishedResourceForPath} from './content/resources';
+import {captureFirstTouchAttribution} from './lib/attribution';
 import './index.css';
 
 async function loadInitialRoute(path: string): Promise<ReactNode> {
@@ -24,6 +25,7 @@ async function loadInitialRoute(path: string): Promise<ReactNode> {
 }
 
 async function bootstrap() {
+  captureFirstTouchAttribution();
   const path = window.location.pathname || "/";
   const legacyRoute = resolveInitialRoute({ pathname: path, search: window.location.search, hash: window.location.hash });
   const initialRouteElement = await loadInitialRoute(path);
