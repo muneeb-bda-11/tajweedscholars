@@ -11,7 +11,7 @@ export function HighlightedLabel({ label, query }: { label: string; query: strin
   return <span aria-label={label}><span aria-hidden="true">{label.slice(0, index)}<mark className="rounded-sm bg-amber-100 text-inherit">{label.slice(index, index + term.length)}</mark>{label.slice(index + term.length)}</span></span>;
 }
 
-export function SearchCombobox({ id, label, value, options, placeholder, error, onChange, onManualChange }: { id: string; label: string; value: string; options: ComboboxOption[]; placeholder: string; error?: string; onChange: (value: string) => void; onManualChange?: () => void }) {
+export function SearchCombobox({ id, label, value, options, placeholder, error, required = false, onChange, onManualChange }: { id: string; label: string; value: string; options: ComboboxOption[]; placeholder: string; error?: string; required?: boolean; onChange: (value: string) => void; onManualChange?: () => void }) {
   const listId = `${useId()}-list`, rootRef = useRef<HTMLDivElement>(null), buttonRef = useRef<HTMLButtonElement>(null), inputRef = useRef<HTMLInputElement>(null);
   const selected = options.find(option => option.value === value);
   const [state, setState] = useState<SelectorTransientState>(closedSelectorState);
@@ -29,7 +29,7 @@ export function SearchCombobox({ id, label, value, options, placeholder, error, 
   const searchName = id.toLowerCase().includes("timezone") ? "ts-timezone-filter" : "ts-country-filter";
   return <div ref={rootRef} className="relative">
     {label && <label id={`${id}-label`} className="text-sm font-bold">{label}</label>}
-    <button ref={buttonRef} id={id} type="button" aria-labelledby={`${id}-label ${id}-summary`} aria-haspopup="listbox" aria-expanded={state.open} aria-controls={listId} onClick={event => { event.stopPropagation(); state.open ? close() : show(); }} onKeyDown={event => { if ((event.key === "Enter" || event.key === " ") && !state.open) { event.preventDefault(); show(); } }} className={`mt-1.5 flex min-h-12 w-full items-center gap-2 rounded-lg border bg-white px-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 ${error ? "border-red-500" : "border-stone-300"}`}>
+    <button ref={buttonRef} id={id} type="button" aria-labelledby={`${id}-label ${id}-summary`} aria-haspopup="listbox" aria-expanded={state.open} aria-controls={listId} aria-required={required} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} onClick={event => { event.stopPropagation(); state.open ? close() : show(); }} onKeyDown={event => { if ((event.key === "Enter" || event.key === " ") && !state.open) { event.preventDefault(); show(); } }} className={`mt-1.5 flex min-h-12 w-full items-center gap-2 rounded-lg border bg-white px-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 ${error ? "border-red-500" : "border-stone-300"}`}>
       <span className="shrink-0">{selected?.leading}</span><span id={`${id}-summary`} className={`min-w-0 flex-1 truncate ${selected ? "text-stone-800" : "text-stone-500"}`}>{selected?.label || placeholder}</span><span aria-hidden="true" className="text-stone-500">⌄</span>
     </button>
     {state.open && <div className="absolute left-0 top-full z-50 mt-1 w-full max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-stone-200 bg-white shadow-xl" onClick={event => event.stopPropagation()}>

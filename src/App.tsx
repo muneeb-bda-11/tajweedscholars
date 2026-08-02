@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState } from "react";
-import { RouterProvider, Route } from "./lib/router";
+import { RouterProvider, Route, RouteFocusManager, useRouter } from "./lib/router";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { Home } from "./pages/Home";
@@ -34,4 +34,10 @@ function AppRoutes({ initialRouteElement }: { initialRouteElement?: React.ReactN
   </Suspense>;
 }
 
-export default function App({ initialPath, initialRouteElement }: { initialPath?: string; initialRouteElement?: React.ReactNode } = {}) { return <RouterProvider initialPath={initialPath}><ProgramFinderProvider><div className="flex min-h-screen flex-col bg-stone-50 font-sans text-stone-850 antialiased selection:bg-emerald-800 selection:text-stone-50"><Header /><main className="flex-grow"><AppRoutes initialRouteElement={initialRouteElement} /></main><PageMetadata /><Footer /><MobileTrialBar /></div></ProgramFinderProvider></RouterProvider>; }
+function SiteContent({ children }: { children: React.ReactNode }) {
+  const { path } = useRouter();
+  const Element = path === "/programs" || path === "/free-trial" ? "div" : "main";
+  return <Element id="app-main" className="flex-grow">{children}</Element>;
+}
+
+export default function App({ initialPath, initialRouteElement }: { initialPath?: string; initialRouteElement?: React.ReactNode } = {}) { return <RouterProvider initialPath={initialPath}><ProgramFinderProvider><div className="flex min-h-screen flex-col bg-stone-50 font-sans text-stone-850 antialiased selection:bg-emerald-800 selection:text-stone-50"><Header /><SiteContent><AppRoutes initialRouteElement={initialRouteElement} /></SiteContent><RouteFocusManager /><PageMetadata /><Footer /><MobileTrialBar /></div></ProgramFinderProvider></RouterProvider>; }

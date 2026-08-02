@@ -12,6 +12,7 @@ assert.deepEqual(resolveInitialRoute({ pathname: "/", search: "", hash: "#/unkno
 
 const router = readFileSync(new URL("router.tsx", import.meta.url), "utf8");
 for (const expected of ["history.pushState", "history.replaceState", 'addEventListener("popstate"', "window.location.pathname", "window.location.search", "active-route", "href={to}"]) assert.match(router, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+for (const focusBehavior of ["RouteFocusManager", 'focus({ preventScroll: true })', 'role="dialog"][aria-modal="true"]', "MutationObserver"]) assert.match(router, new RegExp(focusBehavior.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 for (const removed of ["hashchange", "window.location.hash =", "href={`#${to}`}"]) assert.doesNotMatch(router, new RegExp(removed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
 const sourceFolders = ["../components/", "../pages/"];
