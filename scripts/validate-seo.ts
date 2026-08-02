@@ -36,6 +36,8 @@ for (const route of PUBLIC_ROUTES) {
   assert.equal(attribute(html, /<meta\s+name="twitter:image"\s+content="([^"]+)"/i, `${route}: twitter:image`), SOCIAL_IMAGE_URL);
   const h1s = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)];
   assert.equal(h1s.length, 1, `${route}: exactly one H1`);
+  const mains = [...html.matchAll(/<main\b[^>]*>/gi)];
+  assert.equal(mains.length, 1, `${route}: exactly one main landmark`);
   const h1 = h1s[0][1].replace(/<[^>]+>/g, "").replaceAll("&amp;", "&").trim();
   assert.ok(h1.length > 2, `${route}: non-empty H1`);
   const root = attribute(html, /<div\s+id="root">([\s\S]+)<\/div>\s*<\/body>/i, `${route}: prerendered root`);

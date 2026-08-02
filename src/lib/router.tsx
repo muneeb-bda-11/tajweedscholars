@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { PUBLIC_ROUTES } from "../config/metadata";
 import { prefetchRoute } from "./routeModules";
 
@@ -51,6 +51,45 @@ export const useRouter = () => {
   const context = useContext(RouterContext);
   if (!context) throw new Error("useRouter must be used within a RouterProvider");
   return context;
+};
+
+export const RouteFocusManager: React.FC = () => {
+  const { path } = useRouter();
+  const previousPath = useRef(path);
+
+  useEffect(() => {
+    if (previousPath.current === path) return;
+    previousPath.current = path;
+
+    let cancelled = false;
+    let observer: MutationObserver | undefined;
+    const focusRoute = () => {
+      if (cancelled || document.querySelector('[role="dialog"][aria-modal="true"]')) return false;
+      const target = document.querySelector<HTMLElement>("#app-main h1") || document.getElementById("app-main");
+      if (!target) return false;
+      if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+      return true;
+    };
+
+    const frame = requestAnimationFrame(() => {
+      if (focusRoute()) return;
+      const main = document.getElementById("app-main");
+      if (!main) return;
+      observer = new MutationObserver(() => {
+        if (focusRoute()) observer?.disconnect();
+      });
+      observer.observe(main, { childList: true, subtree: true });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, [path]);
+
+  return null;
 };
 
 interface RouteProps { path: string; element: React.ReactNode; }
