@@ -32,6 +32,11 @@ const adult = fn<(lead: Record<string, unknown>) => Record<string, unknown>>("pr
 assert.equal(adult.guardian, "Not applicable \u2014 adult learner"); assert.equal(adult.region, "Not provided"); assert.equal(adult.notes, "Not provided"); assert.equal(adult.learner, "Adult learner"); assert.equal(adult.ageGroup, "Adult");
 const minor = fn<(lead: Record<string, unknown>) => Record<string, unknown>>("presentationValues_")({ learnerType: "self", ageGroup: "7-9", mainGoal: "qaida", guardianName: "Parent", region: "Punjab", notes: "Ready", preferredDays: ["monday"], preferredTime: "evening" });
 assert.equal(minor.guardian, "Parent"); assert.equal(minor.learner, "Learner"); assert.equal(minor.goal, "Start with Qaida");
+const normalizedAttribution = fn<(body: Record<string, unknown>) => Record<string, unknown>>("normalizeTrialLead_")({ attribution: { utm_source: " facebook ", unknown: "ignored" }, preferredDays: [] });
+assert.deepEqual(JSON.parse(JSON.stringify(normalizedAttribution.attribution)), { utm_source: "facebook" });
+assert.equal(fn<(lead: Record<string, unknown>) => Record<string, string>>("validateTrialLead_")({ ...normalizedAttribution, attributionInvalid: true }).attribution, "Invalid attribution data.");
+assert.deepEqual(Array.from(fn<(lead: Record<string, unknown>) => unknown[][]>("marketingAttributionRows_")({ attribution: {} })[0]), ["Source", "Direct / Unknown"]);
+assert.match(source, /function migrateMarketingAttributionColumns\(\)/);
 
 const canonicalAge = fn<(value: unknown) => string>("canonicalAgeGroup_");
 for (const age of ["4-6", "7-9", "10-12", "adult"]) assert.equal(canonicalAge(age), age);
@@ -52,7 +57,7 @@ assert.equal(fn<(a: string, b: string, c: number, d: number) => boolean>("notifi
 assert.equal(fn<(a: string, b: string, c: number, d: number) => boolean>("notificationEligible_")("Sent", "Sent", 0, 3), false);
 assert.equal(fn<(a: number, b: number) => boolean>("retryExhausted_")(3, 3), true);
 
-const lead = { leadId: "TS-TEST-1", submittedAtUtc: "2026-01-01T00:00:00.000Z", learnerType: "child", ageGroup: "7-9", mainGoal: "qaida", contactName: "A <Learner>", guardianName: "Parent & Guardian", countryCode: "PK", countryName: "Pakistan", region: "", timeZone: "Asia/Karachi", whatsapp: "+923294293717", email: "test@example.com", preferredDays: ["monday"], preferredTime: "evening", notes: "<private>", spreadsheetUrl: "https://docs.google.com/spreadsheets/d/test" };
+const lead = { leadId: "TS-TEST-1", submittedAtUtc: "2026-01-01T00:00:00.000Z", learnerType: "child", ageGroup: "7-9", mainGoal: "qaida", contactName: "A <Learner>", guardianName: "Parent & Guardian", countryCode: "PK", countryName: "Pakistan", region: "", timeZone: "Asia/Karachi", whatsapp: "+923294293717", email: "test@example.com", preferredDays: ["monday"], preferredTime: "evening", notes: "<private>", attribution: { utm_source: "facebook", utm_medium: "organic", utm_campaign: "launch", landing_path: "/", submission_path: "/free-trial", first_touch_at: "2026-08-03T10:00:00.000Z" }, spreadsheetUrl: "https://docs.google.com/spreadsheets/d/test" };
 const properties = { FOUNDER_EMAIL: "muneeb@tajweedscholars.com", REPLY_TO_EMAIL: "admissions@tajweedscholars.com", WHATSAPP_BUSINESS_NUMBER: "+923246608501", WEBSITE_URL: "https://example.test" };
 const props = { getProperty(key: string) { return properties[key as keyof typeof properties] || ""; } };
 fn<(lead: Record<string, unknown>, props: { getProperty(key: string): string }) => void>("sendFounderLeadEmail_")(lead, props);
@@ -62,6 +67,7 @@ assert.match(String(sent[0].options.htmlBody), /Message on WhatsApp/); assert.ma
 assert.doesNotMatch(String(sent[0].options.htmlBody), /<private>|<Learner>/); assert.match(String(sent[0].options.htmlBody), /&lt;private&gt;/);
 assert.match(sent[0].plainBody, /Child learner/); assert.match(sent[0].plainBody, /Start with Qaida/); assert.match(sent[0].plainBody, /7\u20139/); assert.match(sent[0].plainBody, /Evening/);
 assert.match(sent[0].plainBody, /Received: 01 Jan 2026, 05:00 AM PKT \(UTC\+5\)/); assert.match(String(sent[0].options.htmlBody), /01 Jan 2026, 05:00 AM PKT \(UTC\+5\)/);
+assert.match(sent[0].plainBody, /MARKETING ATTRIBUTION[\s\S]*UTM source: facebook/); assert.match(String(sent[0].options.htmlBody), /Marketing Attribution/);
 assert.doesNotMatch(sent[0].plainBody + sent[1].plainBody, /(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) [A-Z][a-z]{2} \d{2} \d{4}/);
 assert.match(String(sent[1].options.htmlBody), /What happens next/); assert.match(String(sent[1].options.htmlBody), /No payment information is required/); assert.match(sent[1].plainBody, /Live private one-to-one Quran classes/);
 assert.match(sent[1].plainBody, /Request received: 01 Jan 2026, 05:00 AM PKT/); assert.match(String(sent[1].options.htmlBody), /01 Jan 2026, 05:00 AM PKT/);
@@ -75,6 +81,7 @@ assert.doesNotMatch(String(sent[0].options.htmlBody) + String(sent[1].options.ht
 const row = fn<(id: string, lead: Record<string, unknown>, timestamp: string) => unknown[]>("rowFor_")("TS-TEST-1", { ...lead, consent: true }, lead.submittedAtUtc);
 assert.equal(row[5], "7-9"); assert.equal(row[8], "Parent & Guardian"); assert.equal(row[11], "Not provided"); assert.equal(row[17], "<private>");
 assert.equal(row[1], "2026-01-01T00:00:00.000Z");
+assert.equal(JSON.stringify(row.slice(20, 29)), JSON.stringify(["facebook", "organic", "launch", "", "", "", "/", "/free-trial", "2026-08-03T10:00:00.000Z"]));
 assert.equal(JSON.stringify(row.slice(-10, -1)), JSON.stringify(["Queued", "", "Queued", "", 0, "", "", "", ""]));
 assert.equal((row[row.length - 1] as Date).toISOString(), "2026-01-01T00:00:00.000Z");
 const adultRow = fn<(id: string, lead: Record<string, unknown>, timestamp: string) => unknown[]>("rowFor_")("TS-TEST-2", { ...lead, learnerType: "self", ageGroup: "adult", guardianName: "", region: "", notes: "", consent: true }, lead.submittedAtUtc);
@@ -141,10 +148,11 @@ assert.equal(noLogoOptions.inlineImages, undefined);
 assert.match(String(noLogoOptions.htmlBody), />Tajweed Scholars<\/div>/);
 
 const operationalHeaders = Array.from(context.OPERATIONAL_HEADERS as string[]);
+const attributionHeaders = Array.from(context.ATTRIBUTION_HEADERS as string[]);
 const displayHeaders = Array.from(context.DISPLAY_HEADERS as string[]);
 assert.deepEqual(displayHeaders, ["Submitted At PKT"]);
-assert.equal(Array.from(context.TRIAL_HEADERS as string[]).length + operationalHeaders.length, 29);
-const allHeaders = [...Array.from(context.TRIAL_HEADERS as string[]), ...operationalHeaders];
+assert.equal(Array.from(context.TRIAL_HEADERS as string[]).length + attributionHeaders.length + operationalHeaders.length, 38);
+const allHeaders = [...Array.from(context.TRIAL_HEADERS as string[]), ...attributionHeaders, ...operationalHeaders];
 const map = Object.fromEntries(allHeaders.map((header, index) => [header, index]));
 const makeRow = (founder = "Queued", user = "Queued", attempts = 0) => {
   const values = new Array(allHeaders.length).fill("");

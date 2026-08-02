@@ -1,6 +1,6 @@
 # Tajweed Scholars Admissions Operations Phase 1
 
-The production Apps Script source is `TrialLeads.gs`. It preserves the existing webhook contract and the first 20 Trial Leads columns, then appends operational notification columns non-destructively.
+The production Apps Script source is `TrialLeads.gs`. It preserves the existing webhook contract and first 20 Trial Leads columns, adds nine marketing-attribution columns after them, and retains the operational notification columns non-destructively.
 
 ## Required Script Properties
 
@@ -30,9 +30,10 @@ Never place property values, deployment URLs, passwords, lead data, or API secre
 4. Replace the editor source with `TrialLeads.gs` from this directory and save.
 5. Add every Script Property listed above. Use the copied spreadsheet's ID for `SPREADSHEET_ID`.
 6. Before enabling notifications, reconcile any production rows whose emails were already delivered but whose operational statuses still say `Queued` (see **Safe production reconciliation** below).
-7. Select and run `setupPhase1Admissions()` once.
-8. Review and approve only the requested Spreadsheet, Gmail send/read-alias, properties, locking, and trigger permissions.
-9. Run `verifyPhase1AdmissionsSetup()`. Confirm the Trial Leads sheet, nine operational columns, appended `Submitted At PKT` display column, activity log, and exactly one notification trigger are reported ready. The diagnostic contains no lead data or secrets.
+7. Select and run `migrateMarketingAttributionColumns()` once. Confirm it inserts the nine approved attribution headers after `Follow-up Due`; Sheets shifts the existing operational/display cells without rewriting historical row values.
+8. Select and run `setupPhase1Admissions()` once.
+9. Review and approve only the requested Spreadsheet, Gmail send/read-alias, properties, locking, and trigger permissions.
+10. Run `verifyPhase1AdmissionsSetup()`. Confirm the Trial Leads sheet, attribution columns, nine operational columns, appended `Submitted At PKT` display column, activity log, and exactly one notification trigger are reported ready. The diagnostic contains no lead data or secrets.
 
 `setupPhase1Admissions()` is idempotent. It appends missing operational headers and the `Submitted At PKT` display column, configures the spreadsheet business time zone, creates the activity sheet and headers if absent, and replaces notification triggers with exactly one one-minute `processPendingLeadNotifications` trigger. It does not process leads itself and never deletes or moves existing business columns or rows. Run `backfillSubmittedAtPktDisplay()` manually once to populate only blank PKT display cells from canonical UTC values.
 

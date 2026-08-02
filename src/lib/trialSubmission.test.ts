@@ -8,6 +8,8 @@ let calls = 0, sent: Record<string, unknown> = {};
 globalThis.fetch = (async (_input: string | URL | Request, init?: RequestInit) => { calls += 1; sent = JSON.parse(String(init?.body)); return new Response(JSON.stringify({ ok: true, leadId: "TS-TEST-ONE", message: "received" }), { status: 200, headers: { "Content-Type": "application/json" } }); }) as typeof fetch;
 assert.equal((await submitTrialRequest(payload)).leadId, "TS-TEST-ONE");
 assert.equal(calls, 1); assert.equal(sent.guardianName, ""); assert.ok(!("apiSecret" in sent)); assert.ok(!("city" in sent));
+await submitTrialRequest({ ...payload, attribution: { utm_source: "facebook", utm_medium: "organic", utm_campaign: "launch", utm_content: "kids-post", landing_path: "/", submission_path: "/free-trial", first_touch_at: "2026-08-03T10:00:00.000Z" } });
+assert.deepEqual(sent.attribution, { utm_source: "facebook", utm_medium: "organic", utm_campaign: "launch", utm_content: "kids-post", landing_path: "/", submission_path: "/free-trial", first_touch_at: "2026-08-03T10:00:00.000Z" });
 assert.equal(trialSubmissionStatus(0), "Submitting securely…"); assert.equal(trialSubmissionStatus(700), "Saving your trial request…"); assert.equal(trialSubmissionStatus(2500), "Almost done — confirming your request…");
 
 globalThis.fetch = (async () => new Response(JSON.stringify({ ok: true, message: "received" }), { status: 200, headers: { "Content-Type": "application/json" } })) as typeof fetch;

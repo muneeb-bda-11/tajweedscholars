@@ -1,11 +1,12 @@
 import type { AgeGroup, LearnerType, MainGoal, PreferredDay, PreferredTime } from "../shared/trialOptions";
+import type { MarketingAttribution } from "../shared/attribution";
 export type { AgeGroup, LearnerType, MainGoal, PreferredDay, PreferredTime } from "../shared/trialOptions";
 
 export interface TrialSubmissionPayload {
   learnerType: LearnerType; ageGroup: AgeGroup; mainGoal: MainGoal; contactName: string; guardianName: string;
   countryCode: string; countryName: string; region: string; timeZone: string; whatsapp: string; email: string;
   preferredDays: PreferredDay[]; preferredTime: PreferredTime; notes: string; consent: true;
-  submissionId: string; honeypot: string; formStartedAt: number;
+  submissionId: string; honeypot: string; formStartedAt: number; attribution?: MarketingAttribution;
 }
 export interface TrialSubmissionSuccess { ok: true; leadId: string; message: string }
 type ErrorResponse = { ok: false; code?: string; message?: string; fieldErrors?: Record<string, string> };

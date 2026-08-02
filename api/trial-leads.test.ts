@@ -7,6 +7,12 @@ const displayPayload = { ...base, learnerType: "My child", ageGroup: "7–9", ma
 const normalized = normalizeTrialPayload(displayPayload) as Record<string, unknown>;
 assert.deepEqual({ learnerType: normalized.learnerType, ageGroup: normalized.ageGroup, mainGoal: normalized.mainGoal, preferredDays: normalized.preferredDays, preferredTime: normalized.preferredTime }, { learnerType: "child", ageGroup: "7-9", mainGoal: "qaida", preferredDays: ["monday", "wednesday"], preferredTime: "evening" });
 const validated = validateTrialPayload(normalized); assert.deepEqual(validated.fieldErrors, {}); assert.ok(validated.payload);
+const attributed = validateTrialPayload(normalizeTrialPayload({ ...base, attribution: { utm_source: " facebook ", utm_campaign: "launch", referrer_host: "search.example", landing_path: "/", submission_path: "/free-trial", first_touch_at: "2026-08-03T10:00:00.000Z", unknown: "ignored" } }));
+assert.deepEqual(attributed.fieldErrors, {}); assert.equal(attributed.payload?.attribution?.utm_source, "facebook"); assert.ok(!("unknown" in (attributed.payload?.attribution ?? {})));
+assert.ok(validateTrialPayload(normalizeTrialPayload({ ...base, attribution: { utm_source: [] } })).fieldErrors["attribution.utm_source"]);
+assert.ok(validateTrialPayload(normalizeTrialPayload({ ...base, attribution: [] })).fieldErrors.attribution);
+assert.ok(validateTrialPayload(normalizeTrialPayload({ ...base, attribution: { referrer_host: "https://example.com/path?q=private" } })).fieldErrors["attribution.referrer_host"]);
+assert.deepEqual(validateTrialPayload({ ...base }).fieldErrors, {}, "legacy payloads without attribution remain valid");
 assert.equal(validated.payload?.guardianName, "Parent Name");
 assert.ok(validateTrialPayload({ ...base, learnerType: "child", ageGroup: "7-9", guardianName: "" }).fieldErrors.guardianName);
 assert.deepEqual(validateTrialPayload({ ...base, learnerType: "self", ageGroup: "adult", guardianName: "" }).fieldErrors, {});
