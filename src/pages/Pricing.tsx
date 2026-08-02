@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { PRICING_PLANS, PRICING } from "../config/site";
+import { PRICING_PLANS, PRICING, siteEmails, siteMailto } from "../config/site";
 import { Icon } from "../components/Icon";
 import { Link } from "../lib/router";
 import { PRICING_FAQS } from "../config/pageContent";
@@ -28,6 +28,7 @@ export const Pricing: React.FC = () => {
         <section className="mx-auto mt-10 max-w-4xl"><h2 className="text-center text-2xl font-bold">What every plan includes</h2><ul className="mt-5 grid gap-3 sm:grid-cols-2">{PRICING_PLANS[0].features.map((feature) => <li key={feature} className="flex gap-2 rounded-lg border border-stone-200 bg-white p-4 text-sm"><Icon name="Check" size={16} className="shrink-0 text-emerald-800"/>{feature}</li>)}</ul></section>
         <section className="mx-auto mt-10 max-w-4xl"><h2 className="text-2xl font-bold">Weekend options</h2><div className="mt-4 grid gap-4 sm:grid-cols-2">{PRICING_PLANS.slice(5).map((plan, i) => <article key={plan.id} className="rounded-xl border border-stone-200 bg-white p-5"><h3 className="font-bold">{plan.title}</h3><p className="mt-1 text-sm text-stone-600">{plan.frequency}</p><p className="mt-4 text-2xl font-bold">{money.symbol}{money.rates[i+5]} <span className="text-sm font-normal">{currency}/month</span></p></article>)}</div></section>
 
+        <section className="mx-auto mt-10 max-w-4xl rounded-xl border border-stone-200 bg-white p-5 sm:p-6" aria-labelledby="payment-details-title"><h2 id="payment-details-title" className="text-xl font-bold">Payment details</h2><p className="mt-3 text-sm leading-6 text-stone-600">Admissions confirms the billing currency at enrollment. Payment is made through Remitly, TapTap Send, or direct/manual bank transfer where available. Payment details are shared only through official Tajweed Scholars channels; card payments are not collected on this website.</p><div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 text-sm"><Link to="/payment-policy" className="font-bold text-emerald-800 underline underline-offset-4">Payment Policy</Link><Link to="/refund-policy" className="font-bold text-emerald-800 underline underline-offset-4">Refund Policy</Link><a href={siteMailto.accounts} className="font-bold text-emerald-800 underline underline-offset-4">{siteEmails.accounts}</a></div></section>
         <section className="mx-auto mt-12 max-w-3xl"><h2 className="text-center text-2xl font-bold">Pricing FAQ</h2><TrialFaqAccordion faqs={PRICING_FAQS}/></section><div className="mx-auto mt-12 max-w-3xl rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-8 text-center md:px-10">
           <h2 className="font-display text-2xl font-bold">Begin with three free trial classes</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-stone-600">Admissions will confirm placement, scheduling, and the suitable monthly plan after the trial experience.</p>

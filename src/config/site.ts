@@ -24,7 +24,7 @@ export const siteMailto = {
 export const SITE_CONFIG = {
   name: "Tajweed Scholars",
   tagline: "Helping Every Muslim Build a Lifelong Connection with the Quran",
-  description: "Online Quran Academy for Kids & Adults offering live 1-to-1 classes with Sanad & Ijazah certified teachers.",
+  description: "Online Quran Academy for Kids & Adults offering live 1-to-1 classes with teachers whose Sanad/Ijazah credentials are checked before assignment.",
   
   // Contact & Socials
   WHATSAPP_NUMBER: "+923246608501",
@@ -62,7 +62,7 @@ export const PROGRAMS: Program[] = [
     highlights: [
       "Fun, interactive 1-to-1 teaching style",
       "Age-appropriate activities and positive encouragement",
-      "Patient, certified teachers trained to keep kids engaged",
+      "Patient teachers whose credentials are checked before assignment",
       "Flexible timings fitting school & family routines"
     ]
   },
@@ -111,8 +111,8 @@ export const PROGRAMS: Program[] = [
   {
     id: "arabic-language",
     title: "Arabic Language",
-    shortDescription: "Arabic learning through consultation-based placement during Phase 1.",
-    fullDescription: "Phase 1 enrollment for Arabic language classes is entirely consultation-based, and class placement is confirmed individually. Learn to read, understand, and communicate in classical Quranic Arabic or Modern Standard Arabic. Syllabus planning is customized through a personal consultation class with our academic team to fit your specific objectives.",
+    shortDescription: "Available following an admissions consultation.",
+    fullDescription: "Available following an admissions consultation. Learn to read, understand, and communicate in classical Quranic Arabic or Modern Standard Arabic. Syllabus planning is customized through a personal consultation class with our academic team to fit your specific objectives.",
     icon: "Languages",
     path: "/arabic-language",
     highlights: [
@@ -125,8 +125,8 @@ export const PROGRAMS: Program[] = [
   {
     id: "islamic-studies",
     title: "Islamic Studies",
-    shortDescription: "Initially available as an add-on alongside eligible Quran programs.",
-    fullDescription: "Islamic Studies is initially available as an add-on alongside eligible Quran programs, rather than as a standalone comprehensive program. Equip yourself or your children with essential Islamic knowledge, covering basic Aqeedah (belief), Fiqh of daily worship, Seerah (prophetic biography), Islamic history, and daily Adhkar (supplications), integrated seamlessly into your standard Quran schedule.",
+    shortDescription: "Available as an add-on for eligible Quran-program learners.",
+    fullDescription: "Available as an add-on for eligible Quran-program learners. The pathway covers basic Aqeedah (belief), Fiqh of daily worship, Seerah (prophetic biography), Islamic history, and daily Adhkar (supplications) alongside an eligible Quran program.",
     icon: "HeartHandshake",
     path: "/islamic-studies",
     highlights: [
@@ -180,9 +180,9 @@ export const WHY_CHOOSE_US: FeatureSection[] = [
   },
   {
     id: "teachers",
-    title: "Teachers You Can Verify",
+    title: "Verified teaching credentials",
     boldText: "Tajweed Scholars is led by a founder with a complete verified Sanad.",
-    description: "We are committed to absolute academic integrity. Every teacher is required to hold verified Sanad/Ijazah credentials. Before they are assigned to any family, we rigorously audit their teaching abilities, Tajweed accuracy, professionalism, and online teaching suitability.",
+    description: "Teachers' Sanad/Ijazah credentials are checked before assignment. Teacher checks also include identity, references, a demo lesson, a safeguarding agreement, and a police character certificate where practical.",
     icon: "BadgeCheck"
   },
   {
@@ -337,7 +337,7 @@ export const FAQS: FAQ[] = [
   {
     id: "q-trial-free",
     question: "Are all three trial classes free?",
-    answer: "Yes, absolutely. All three trial classes are completely free and no payment information is required to book them. This ensures you experience our quality with zero commitment.",
+    answer: "Yes. All three trial classes are free, and no payment information is required to book them. Continuing with enrollment after the trials is optional.",
     category: "trial"
   },
   {
@@ -361,7 +361,7 @@ export const FAQS: FAQ[] = [
   {
     id: "q-gender-pref",
     question: "Can we request a male or female teacher?",
-    answer: "Yes. Teacher gender preferences are carefully considered wherever relevant, subject to teacher availability and schedule compatibility.",
+    answer: "Female teacher requests are considered subject to availability and confirmed before enrollment.",
     category: "trial"
   },
   {

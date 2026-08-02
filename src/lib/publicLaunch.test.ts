@@ -21,11 +21,11 @@ assert.match(pricing, /Plans from \$40\/month/); assert.match(pricing, /30-minut
 const programRoutes = ["kids-quran-classes", "adult-quran-classes", "tajweed-course", "hifz-program", "arabic-language", "islamic-studies"];
 for (const route of programRoutes) assert.match(app, new RegExp(`<Route path="/${route}" element={<ProgramPage />} />`));
 assert.match(programs, /What the student learns/); assert.match(programs, /How classes work/); assert.match(programs, /Program highlights/); assert.match(programs, /30 minutes/);
-assert.match(programs, /Children ages 4–15/); assert.match(programs, /consultation-based/); assert.match(programs, /not as a standalone program/);
+assert.match(programs, /Children ages 4–15/); assert.match(programs, /Available following an admissions consultation/); assert.match(programs, /Available as an add-on for eligible Quran-program learners/);
 
 assert.match(app, /path="\/about" element={<About \/>}/); assert.doesNotMatch(about, /placeholder|under construction/i); assert.match(about, /complete verified Sanad/);
 assert.match(app, /path="\/why-choose-us" element={<WhyChooseUs \/>}/); assert.doesNotMatch(why, /placeholder|under construction/i); assert.match(why, /WHY_CHOOSE_US/); assert.match(why, /TRUST_STRIP/);
-assert.match(policy, /Privacy Policy/); assert.match(policy, /90 days/); assert.match(policy, /not been legally reviewed/); assert.match(policy + config, /privacy@tajweedscholars\.com/); assert.match(config, /info@tajweedscholars\.com/);
+assert.match(policy, /Privacy Policy/); assert.match(policy, /90 days/); assert.match(policy, /Effective date: 2 August 2026/); assert.match(policy + config, /privacy@tajweedscholars\.com/); assert.match(config, /info@tajweedscholars\.com/);
 
 assert.match(app, /path="\/free-trial" element={<FreeTrial \/>}/);
 assert.match(header, /mobile-programs/); assert.match(header, /mobile-policies/); assert.match(header, /NAVIGATION_LINKS\.programs/);

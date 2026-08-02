@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useRouter } from "../lib/router";
-import { POLICIES, POLICY_LAST_UPDATED, POLICY_NOTICE } from "../config/policies";
+import { POLICIES, POLICY_EFFECTIVE_DATE } from "../config/policies";
 
 export const PolicyPage: React.FC = () => {
   const { path } = useRouter();
@@ -11,14 +11,10 @@ export const PolicyPage: React.FC = () => {
       <header className="border-b border-stone-200 pb-8">
         <p className="text-sm font-semibold text-emerald-800">Tajweed Scholars policy</p>
         <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-stone-950 md:text-5xl">{policy.title}</h1>
-        <p className="mt-4 text-sm text-stone-500">Last updated: {POLICY_LAST_UPDATED}</p>
+        <p className="mt-4 text-sm text-stone-500">Effective date: {POLICY_EFFECTIVE_DATE}</p>
         <p className="mt-6 text-lg leading-8 text-stone-700">{policy.summary}</p>
       </header>
-      <aside aria-labelledby="phase-1-policy-notice" className="my-8 border-l-4 border-amber-400 bg-amber-50 px-5 py-4">
-        <h2 id="phase-1-policy-notice" className="font-bold text-stone-950">Phase 1 policy notice</h2>
-        <p className="mt-1 text-sm leading-6 text-stone-700">{POLICY_NOTICE}</p>
-      </aside>
-      <div className="space-y-9">
+      <div className="mt-8 space-y-9">
         {policy.sections.map((section) => <section key={section.heading}>
           <h2 className="font-display text-2xl font-bold text-stone-950">{section.heading}</h2>
           {section.paragraphs?.map((paragraph) => <p key={paragraph} className="mt-3 leading-7 text-stone-700">{paragraph}</p>)}

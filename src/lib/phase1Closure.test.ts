@@ -40,7 +40,7 @@ assert.match(notFound, /404 — Page not found/);
 assert.match(program, /program\.id === "kids-classes" && <SafeguardingSummary/);
 assert.match(why, /<SafeguardingSummary \/>/);
 assert.match(safeguarding, /\/child-safeguarding/);
-for (const truth of ["parent or guardian", "official Tajweed Scholars WhatsApp, email, and Zoom channels", "identity", "verified Sanad\/Ijazah", "safeguarding agreement", "Founder \/ Operations Lead"]) assert.match(safeguarding, new RegExp(truth, "i"));
+for (const truth of ["parent or guardian", "official Tajweed Scholars WhatsApp, email, and Zoom channels", "identity", "verified Sanad\/Ijazah", "safeguarding agreement", "Founder &amp; Operations Lead", "Safeguarding Concern"]) assert.match(safeguarding, new RegExp(truth, "i"));
 
 const publicSource = readdirSync(new URL("../pages/", import.meta.url)).filter((file) => file.endsWith(".tsx")).map((file) => read(`../pages/${file}`)).join("\n") + footer + safeguarding;
 for (const prohibited of [/Stripe/i, /PayPal/i, /\bWise\b/i, /58\+\s*teachers/i, /guaranteed results/i, /placeholder phone/i, /live dashboard/i, /parent portal/i, /student portal/i]) assert.doesNotMatch(publicSource, prohibited);
