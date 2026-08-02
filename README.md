@@ -21,18 +21,31 @@ npm run dev
 
 The development server runs at `http://localhost:3000` by default. Public browsing does not require environment variables. Trial submission forwarding requires the server-side values documented in `.env.example`; never expose those values through Vite client variables or commit real secrets.
 
-## Validation
+## Automated CI and validation
+
+GitHub Actions runs the following exact gates for every pull request targeting `main` and every push to `main`, using Node 22, npm caching, and `npm ci`:
 
 ```sh
 npm run lint
 npm test
 npm run build
 npm run validate:seo
-node scripts/audit-responsive.mjs
 git diff --check
 ```
 
-`npm run build` creates the Vite bundle, prerenders all public routes, and runs SEO validation. The responsive audit uses an installed Chromium-family browser and writes generated screenshots and measurements only below `.artifacts/`.
+`npm run build` creates the Vite bundle, prerenders all 22 public routes, and validates their generated HTML, metadata, canonicals, landmarks, and production-safe URLs. `npm run validate:seo` remains a separate CI gate so an already-built output can be checked directly. Existing tests preserve real 404 behavior and canonical non-trailing routes.
+
+For an optional local responsive audit, run `node scripts/audit-responsive.mjs`. It uses an installed Chromium-family browser and writes generated screenshots and measurements only below `.artifacts/`.
+
+## Production verification
+
+Run the dependency-free, read-only production smoke test with:
+
+```sh
+npm run verify:production
+```
+
+It sends only GET requests, never submits a form or changes remote data, and checks all 22 production routes plus robots, sitemap, 404, canonical redirects, and the API method guard. No secrets are required.
 
 ## Vercel deployment
 
