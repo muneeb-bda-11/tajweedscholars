@@ -67,6 +67,14 @@ var LEAD_STATUSES = [
   "Enrolled",
   "Not Proceeding"
 ];
+var ACTION_QUEUE_SHEET_DEFAULT = "Admissions Action Queue";
+var MARKETING_PERFORMANCE_SHEET_DEFAULT = "Marketing Performance";
+var DATA_QUALITY_SHEET_DEFAULT = "Admissions Data Quality";
+var DAILY_SUMMARY_HANDLER = "sendDailyFounderAdmissionsSummary";
+var REPORT_UNKNOWN = "Direct / Unknown";
+var ACTION_QUEUE_HEADERS = ["Action Group", "Priority", "Original Row", "Lead ID", "Learner / Contact", "Parent / Guardian", "WhatsApp", "Email", "Country", "Main Goal", "Age Group", "Lead Status", "Follow-up Due", "Source", "UTM Source", "UTM Medium", "UTM Campaign"];
+var MARKETING_PERFORMANCE_HEADERS = ["Source", "Medium", "Campaign", "Total Leads", "Contacted Leads", "Trials Booked", "Trials Attended", "Paid Enrollments", "Lead to Trial %", "Trial to Paid %"];
+var DATA_QUALITY_HEADERS = ["Original Row", "Lead ID", "Field", "Warning"];
 
 var ENUMS = {
   learnerType: ["child", "self"],
@@ -1226,6 +1234,232 @@ function json_(status, ok, code, message, fieldErrors, leadId) {
 
   return ContentService.createTextOutput(JSON.stringify(response))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function reportValue_(row, map, header) {
+  return map[header] == null ? "" : row[map[header]];
+}
+
+function reportText_(row, map, header) {
+  return String(reportValue_(row, map, header) == null ? "" : reportValue_(row, map, header)).trim();
+}
+
+function reportDimension_(value) {
+  var text = String(value == null ? "" : value).trim();
+  return text || REPORT_UNKNOWN;
+}
+
+function dateKey_(value, timeZone) {
+  if (!value) return "";
+  if (value instanceof Date && !isNaN(value.getTime())) return Utilities.formatDate(value, timeZone || "UTC", "yyyy-MM-dd");
+  var text = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    var exact = new Date(text + "T00:00:00Z");
+    return !isNaN(exact.getTime()) && exact.toISOString().slice(0, 10) === text ? text : "";
+  }
+  var parsed = new Date(text);
+  return isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
+function addUtcDays_(dateKey, days) {
+  var parsed = new Date(dateKey + "T00:00:00Z");
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+}
+
+function actionClassification_(status, followUpValue, todayKey, timeZone) {
+  var followUp = dateKey_(followUpValue, timeZone);
+  var terminal = status === "Enrolled" || status === "Not Proceeding";
+  if (!terminal && followUp && followUp < todayKey) return { group: "Overdue follow-ups", priority: 1, due: followUp };
+  if (!terminal && followUp === todayKey) return { group: "Due today", priority: 2, due: followUp };
+  if (!terminal && followUp > todayKey && followUp <= addUtcDays_(todayKey, 3)) return { group: "Due within next 3 days", priority: 3, due: followUp };
+  if (status === "New") return { group: "New leads not yet contacted", priority: 4, due: followUp };
+  if (["Trial 1 Completed", "Trial 2 Completed", "Trial 3 Completed"].indexOf(status) >= 0) return { group: "Trial completed, not enrolled", priority: 5, due: followUp };
+  return null;
+}
+
+function actionQueueRows_(rows, map, todayKey, firstRowNumber, timeZone) {
+  var output = [];
+  rows.forEach(function (row, index) {
+    var action = actionClassification_(reportText_(row, map, "Lead Status"), reportValue_(row, map, "Follow-up Due"), todayKey, timeZone);
+    if (!action) return;
+    output.push([
+      action.group, action.priority, (firstRowNumber || 2) + index, reportText_(row, map, "Lead ID"),
+      reportText_(row, map, "Learner or Parent Name"), reportText_(row, map, "Guardian Name"),
+      reportText_(row, map, "WhatsApp"), reportText_(row, map, "Email"), reportText_(row, map, "Country"),
+      reportText_(row, map, "Main Goal"), reportText_(row, map, "Age Group"), reportText_(row, map, "Lead Status"),
+      reportValue_(row, map, "Follow-up Due"), reportText_(row, map, "Source"), reportText_(row, map, "UTM Source"),
+      reportText_(row, map, "UTM Medium"), reportText_(row, map, "UTM Campaign")
+    ]);
+  });
+  output.sort(function (left, right) {
+    return left[1] - right[1] || String(dateKey_(left[12], timeZone) || "9999-12-31").localeCompare(String(dateKey_(right[12], timeZone) || "9999-12-31")) || left[2] - right[2];
+  });
+  return output;
+}
+
+function safePercent_(numerator, denominator) {
+  return denominator ? Math.round((numerator / denominator) * 10000) / 100 : 0;
+}
+
+function marketingPerformanceRows_(rows, map) {
+  var groups = {};
+  rows.forEach(function (row) {
+    var source = reportDimension_(reportText_(row, map, "UTM Source"));
+    var medium = reportDimension_(reportText_(row, map, "UTM Medium"));
+    var campaign = reportDimension_(reportText_(row, map, "UTM Campaign"));
+    var key = [source, medium, campaign].join("\u001f");
+    var metric = groups[key] || { source: source, medium: medium, campaign: campaign, total: 0, contacted: 0, booked: 0, attended: 0, enrolled: 0 };
+    var status = reportText_(row, map, "Lead Status");
+    metric.total += 1;
+    if (LEAD_STATUSES.indexOf(status) > 0) metric.contacted += 1;
+    if (["Trial 1 Booked", "Trial 1 Completed", "Trial 2 Completed", "Trial 3 Completed", "Enrolled"].indexOf(status) >= 0) metric.booked += 1;
+    if (["Trial 1 Completed", "Trial 2 Completed", "Trial 3 Completed", "Enrolled"].indexOf(status) >= 0) metric.attended += 1;
+    if (status === "Enrolled") metric.enrolled += 1;
+    groups[key] = metric;
+  });
+  return Object.keys(groups).sort().map(function (key) {
+    var metric = groups[key];
+    return [metric.source, metric.medium, metric.campaign, metric.total, metric.contacted, metric.booked, metric.attended, metric.enrolled, safePercent_(metric.booked, metric.total), safePercent_(metric.enrolled, metric.attended)];
+  });
+}
+
+function attributionLimits_() {
+  return { "UTM Source": 100, "UTM Medium": 100, "UTM Campaign": 160, "UTM Content": 160, "UTM Term": 160, "Referrer Host": 253, "Landing Path": 300, "Submission Path": 300, "First Touch At": 30 };
+}
+
+function dataQualityWarnings_(rows, map, firstRowNumber) {
+  var warnings = [], seenSubmissionIds = {}, limits = attributionLimits_();
+  function warn(rowNumber, leadId, field, message) { warnings.push([rowNumber, leadId, field, message]); }
+  rows.forEach(function (row, index) {
+    var rowNumber = (firstRowNumber || 2) + index, leadId = reportText_(row, map, "Lead ID"), status = reportText_(row, map, "Lead Status");
+    if (!reportText_(row, map, "WhatsApp")) warn(rowNumber, leadId, "WhatsApp", "Missing WhatsApp number");
+    if (!reportText_(row, map, "Email")) warn(rowNumber, leadId, "Email", "Missing email address");
+    var followUpRaw = reportValue_(row, map, "Follow-up Due");
+    if (followUpRaw && !dateKey_(followUpRaw)) warn(rowNumber, leadId, "Follow-up Due", "Invalid follow-up date");
+    if (!followUpRaw && status && status !== "Enrolled" && status !== "Not Proceeding") warn(rowNumber, leadId, "Follow-up Due", "Follow-up date is incomplete");
+    if (status && LEAD_STATUSES.indexOf(status) < 0) warn(rowNumber, leadId, "Lead Status", "Unknown lead status");
+    ["Lead ID", "Founder Alert Status", "User Email Status"].forEach(function (header) { if (map[header] != null && !reportText_(row, map, header)) warn(rowNumber, leadId, header, "Missing important operational value"); });
+    Object.keys(limits).forEach(function (header) { var text = reportText_(row, map, header); if (text.length > limits[header]) warn(rowNumber, leadId, header, "Value exceeds expected limit of " + limits[header]); });
+    ["Landing Path", "Submission Path"].forEach(function (header) { var path = reportText_(row, map, header); if (path && (path.charAt(0) !== "/" || path.indexOf("//") === 0 || /[?#]/.test(path))) warn(rowNumber, leadId, header, "Malformed path"); });
+    var firstTouch = reportText_(row, map, "First Touch At");
+    if (firstTouch && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(firstTouch) || !parseUtcDate_(firstTouch))) warn(rowNumber, leadId, "First Touch At", "Malformed UTC timestamp");
+    if (map["Submission ID"] != null) {
+      var submissionId = reportText_(row, map, "Submission ID");
+      if (submissionId && seenSubmissionIds[submissionId]) warn(rowNumber, leadId, "Submission ID", "Duplicate submission ID; first seen at row " + seenSubmissionIds[submissionId]);
+      else if (submissionId) seenSubmissionIds[submissionId] = rowNumber;
+    }
+  });
+  if (map["Submission ID"] == null) warn("Sheet", "", "Submission ID", "Column is not stored; historical duplicate submission IDs cannot be scanned. Webhook duplicate protection remains active in Script Properties.");
+  return warnings;
+}
+
+function admissionsSourceTable_(spreadsheet, props) {
+  var sheet = spreadsheet.getSheetByName(trialSheetName_(props));
+  if (!sheet) throw new Error("TRIAL_LEADS_SHEET_NOT_FOUND");
+  var lastColumn = sheet.getLastColumn(), lastRow = sheet.getLastRow();
+  var headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0], map = headerMap_(headers);
+  ["Lead ID", "Lead Status", "Follow-up Due"].forEach(function (header) { if (map[header] == null) throw new Error("REPORT_REQUIRED_HEADER_MISSING: " + header); });
+  return { sheet: sheet, headers: headers, map: map, rows: lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, lastColumn).getValues() : [] };
+}
+
+function replaceDerivedSheet_(spreadsheet, name, headers, rows) {
+  var sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  if (rows.length) sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  sheet.setFrozenRows(1);
+  return { sheet: name, rows: rows.length };
+}
+
+function refreshAdmissionsReports() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var props = PropertiesService.getScriptProperties(), spreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
+    var source = admissionsSourceTable_(spreadsheet, props);
+    var zone = businessTimeZone_(props), today = Utilities.formatDate(new Date(), zone, "yyyy-MM-dd");
+    var result = {
+      actionQueue: replaceDerivedSheet_(spreadsheet, ACTION_QUEUE_SHEET_DEFAULT, ACTION_QUEUE_HEADERS, actionQueueRows_(source.rows, source.map, today, 2, zone)),
+      marketingPerformance: replaceDerivedSheet_(spreadsheet, MARKETING_PERFORMANCE_SHEET_DEFAULT, MARKETING_PERFORMANCE_HEADERS, marketingPerformanceRows_(source.rows, source.map)),
+      dataQuality: replaceDerivedSheet_(spreadsheet, DATA_QUALITY_SHEET_DEFAULT, DATA_QUALITY_HEADERS, dataQualityWarnings_(source.rows, source.map, 2))
+    };
+    SpreadsheetApp.flush();
+    return result;
+  } finally { lock.releaseLock(); }
+}
+
+function refreshAdmissionsActionQueue() { return refreshAdmissionsReports().actionQueue; }
+function refreshMarketingPerformance() { return refreshAdmissionsReports().marketingPerformance; }
+function refreshAdmissionsDataQuality() { return refreshAdmissionsReports().dataQuality; }
+
+function dailyFounderSummaryData_(rows, map, now, todayKey, timeZone) {
+  var cutoff = now.getTime() - 24 * 60 * 60 * 1000, fresh = [], sourceCounts = {};
+  rows.forEach(function (row) {
+    var submitted = parseUtcDate_(reportValue_(row, map, "Submitted At UTC"));
+    if (submitted && submitted.getTime() >= cutoff && submitted.getTime() <= now.getTime()) {
+      fresh.push(row);
+      var source = reportDimension_(reportText_(row, map, "UTM Source"));
+      var campaign = reportDimension_(reportText_(row, map, "UTM Campaign"));
+      var label = source + " / " + campaign;
+      sourceCounts[label] = (sourceCounts[label] || 0) + 1;
+    }
+  });
+  var actions = actionQueueRows_(rows, map, todayKey, 2, timeZone);
+  return {
+    newLeads: fresh.length,
+    overdue: actions.filter(function (row) { return row[0] === "Overdue follow-ups"; }).length,
+    dueToday: actions.filter(function (row) { return row[0] === "Due today"; }).length,
+    upcomingTrials: rows.filter(function (row) { return reportText_(row, map, "Lead Status") === "Trial 1 Booked"; }).length,
+    awaitingDecision: actions.filter(function (row) { return row[0] === "Trial completed, not enrolled"; }).length,
+    sources: sourceCounts,
+    dataQualityWarnings: dataQualityWarnings_(rows, map, 2).length
+  };
+}
+
+function founderSummaryPlain_(summary) {
+  var sources = Object.keys(summary.sources).sort().map(function (key) { return "- " + key + ": " + summary.sources[key]; });
+  return ["TAJWEED SCHOLARS ADMISSIONS SUMMARY", "Period: previous 24 hours", "", "New leads: " + summary.newLeads, "Overdue follow-ups: " + summary.overdue, "Follow-ups due today: " + summary.dueToday, "Upcoming trials (Trial 1 Booked): " + summary.upcomingTrials, "Trial completed, awaiting decision: " + summary.awaitingDecision, "Data-quality warnings: " + summary.dataQualityWarnings, "", "New lead source / campaign breakdown:", sources.length ? sources.join("\n") : "- None"].join("\n");
+}
+
+function buildDailyFounderAdmissionsSummary_() {
+  var props = PropertiesService.getScriptProperties(), spreadsheet = SpreadsheetApp.openById(requiredProperty_(props, "SPREADSHEET_ID"));
+  var source = admissionsSourceTable_(spreadsheet, props), now = new Date();
+  var zone = businessTimeZone_(props), today = Utilities.formatDate(now, zone, "yyyy-MM-dd");
+  var summary = dailyFounderSummaryData_(source.rows, source.map, now, today, zone);
+  return { dateKey: today, summary: summary, plain: founderSummaryPlain_(summary) };
+}
+
+function previewDailyFounderAdmissionsSummary() {
+  return buildDailyFounderAdmissionsSummary_();
+}
+
+function sendDailyFounderAdmissionsSummary() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var props = PropertiesService.getScriptProperties(), built = buildDailyFounderAdmissionsSummary_();
+    var key = "daily_founder_summary_" + built.dateKey;
+    if (props.getProperty(key)) return { sent: false, reason: "Already sent for " + built.dateKey };
+    var founder = requiredProperty_(props, "FOUNDER_EMAIL"), sender = verifiedSenderAlias_(props);
+    GmailApp.sendEmail(founder, "Tajweed Scholars admissions summary — " + built.dateKey, built.plain, emailSendOptions_("<pre style=\"white-space:pre-wrap;font-family:Arial,sans-serif\">" + htmlEscape_(built.plain) + "</pre>", sender, requiredProperty_(props, "REPLY_TO_EMAIL"), props));
+    props.setProperty(key, new Date().toISOString());
+    return { sent: true, dateKey: built.dateKey };
+  } finally { lock.releaseLock(); }
+}
+
+function setupDailyFounderSummaryTrigger() {
+  removeDailyFounderSummaryTrigger();
+  ScriptApp.newTrigger(DAILY_SUMMARY_HANDLER).timeBased().atHour(8).everyDays(1).create();
+  return { handler: DAILY_SUMMARY_HANDLER, triggers: 1 };
+}
+
+function removeDailyFounderSummaryTrigger() {
+  var removed = 0;
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === DAILY_SUMMARY_HANDLER) { ScriptApp.deleteTrigger(trigger); removed += 1; }
+  });
+  return { removed: removed };
 }
 
 // Phase 1 notification presentation overrides. Kept at the end so deployments
