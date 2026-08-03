@@ -16,6 +16,7 @@ const context = vm.createContext({
   Utilities: {
     formatDate(date: Date, zone: string, pattern: string) {
       assert.equal(zone, "Asia/Karachi");
+      if (pattern === "yyyy-MM-dd") return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
       if (pattern === "Z") return "+0500";
       const parts = new Intl.DateTimeFormat("en-GB", { timeZone: zone, day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true }).formatToParts(date);
       const part = (type: string) => parts.find(item => item.type === type)?.value || "";
@@ -239,5 +240,74 @@ assert.equal(hydratedTimestamp, "2026-02-03T04:05:06.000Z");
 assert.equal(rowWrites.length, 1); assert.equal(rowWrites[0].row, 3); assert.equal(rowWrites[0].column, allHeaders.length - operationalHeaders.length + 1);
 assert.equal(rowWrites[0].width, 9); assert.equal(rowWrites[0].values[0].length, 9);
 assert.equal(propertyStore.pending_notification_target, undefined); assert.equal(propertyStore["notified_target-hash"], "yes");
+
+const reportHeaders = allHeaders;
+const reportMap = Object.fromEntries(reportHeaders.map((header, index) => [header, index]));
+const reportRow = (id: string, status: string, due: string, source = "", medium = "", campaign = "") => {
+  const values = new Array(reportHeaders.length).fill("");
+  values[reportMap["Lead ID"]] = id; values[reportMap["Lead Status"]] = status; values[reportMap["Follow-up Due"]] = due;
+  values[reportMap["Learner or Parent Name"]] = `Learner ${id}`; values[reportMap.WhatsApp] = "+92000000000"; values[reportMap.Email] = `${id.toLowerCase()}@example.com`;
+  values[reportMap["Founder Alert Status"]] = "Sent"; values[reportMap["User Email Status"]] = "Sent";
+  values[reportMap["UTM Source"]] = source; values[reportMap["UTM Medium"]] = medium; values[reportMap["UTM Campaign"]] = campaign;
+  return values;
+};
+const actionClassification = fn<(status: string, due: string | Date, today: string, zone?: string) => { group: string } | null>("actionClassification_");
+assert.equal(actionClassification("Contacted", "2026-08-02", "2026-08-03")?.group, "Overdue follow-ups");
+assert.equal(actionClassification("Contacted", "2026-08-03", "2026-08-03")?.group, "Due today");
+assert.equal(actionClassification("Contacted", "2026-08-06", "2026-08-03")?.group, "Due within next 3 days");
+assert.equal(actionClassification("New", "", "2026-08-03")?.group, "New leads not yet contacted");
+assert.equal(actionClassification("Trial 2 Completed", "", "2026-08-03")?.group, "Trial completed, not enrolled");
+assert.equal(actionClassification("Enrolled", "2026-08-02", "2026-08-03"), null);
+assert.equal(actionClassification("Contacted", new Date("2026-08-02T19:30:00Z"), "2026-08-03", "Asia/Karachi")?.group, "Due today");
+
+const marketingRows = fn<(rows: unknown[][], map: Record<string, number>) => unknown[][]>("marketingPerformanceRows_")([
+  reportRow("A", "New", ""), reportRow("B", "Trial 1 Booked", "", "google", "organic", "spring"),
+  reportRow("C", "Trial 1 Completed", "", "google", "organic", "spring"), reportRow("D", "Enrolled", "", "google", "organic", "spring")
+], reportMap);
+const directMetrics = marketingRows.find(row => row[0] === "Direct / Unknown")!;
+assert.deepEqual(Array.from(directMetrics.slice(0, 3)), ["Direct / Unknown", "Direct / Unknown", "Direct / Unknown"]);
+assert.equal(directMetrics[8], 0); assert.equal(directMetrics[9], 0);
+const googleMetrics = marketingRows.find(row => row[0] === "google")!;
+assert.deepEqual(Array.from(googleMetrics.slice(3, 10)), [3, 3, 3, 2, 1, 100, 50]);
+assert.equal(fn<(value: string) => string>("reportDimension_")("") , "Direct / Unknown");
+
+const warningHeaders = [...reportHeaders, "Submission ID"];
+const warningMap = Object.fromEntries(warningHeaders.map((header, index) => [header, index]));
+const malformedA = [...reportRow("WARN-A", "Unexpected", "not-a-date"), "dup"];
+malformedA[warningMap.WhatsApp] = ""; malformedA[warningMap.Email] = ""; malformedA[warningMap["Landing Path"]] = "https://bad.example/path"; malformedA[warningMap["First Touch At"]] = "yesterday";
+const malformedB = [...reportRow("WARN-B", "New", ""), "dup"];
+const warnings = fn<(rows: unknown[][], map: Record<string, number>, first: number) => unknown[][]>("dataQualityWarnings_")([malformedA, malformedB], warningMap, 2);
+assert.ok(warnings.some(row => row[2] === "Lead Status" && row[3] === "Unknown lead status"));
+assert.ok(warnings.some(row => row[2] === "Submission ID" && String(row[3]).includes("first seen at row 2")));
+assert.ok(warnings.some(row => row[2] === "Landing Path" && row[3] === "Malformed path"));
+assert.ok(warnings.some(row => row[2] === "First Touch At" && row[3] === "Malformed UTC timestamp"));
+assert.ok(fn<(rows: unknown[][], map: Record<string, number>) => unknown[][]>("dataQualityWarnings_")([], reportMap).some(row => row[2] === "Submission ID"));
+
+const derivedSheets = new Map<string, { clears: number; writes: unknown[][][] }>();
+const derivedSpreadsheet = {
+  getSheetByName(name: string) { return derivedSheets.has(name) ? sheetFor(name) : null; },
+  insertSheet(name: string) { derivedSheets.set(name, { clears: 0, writes: [] }); return sheetFor(name); }
+};
+function sheetFor(name: string) {
+  const state = derivedSheets.get(name)!;
+  return { clearContents: () => { state.clears += 1; }, getRange: () => ({ setValues: (values: unknown[][]) => state.writes.push(values) }), setFrozenRows() {} };
+}
+const replaceDerived = fn<(spreadsheet: typeof derivedSpreadsheet, name: string, headers: string[], rows: unknown[][]) => unknown>("replaceDerivedSheet_");
+replaceDerived(derivedSpreadsheet, "Admissions Action Queue", ["A"], [[1]]);
+replaceDerived(derivedSpreadsheet, "Admissions Action Queue", ["A"], [[2]]);
+assert.equal(derivedSheets.size, 1); assert.equal(derivedSheets.get("Admissions Action Queue")?.clears, 2);
+
+const dailyTriggerHandlers = ["sendDailyFounderAdmissionsSummary", "sendDailyFounderAdmissionsSummary", "unrelated"];
+const dailyDeleted: string[] = [], dailyCreated: string[] = [];
+context.ScriptApp = {
+  getProjectTriggers: () => dailyTriggerHandlers.map(handler => ({ getHandlerFunction: () => handler })),
+  deleteTrigger: (trigger: { getHandlerFunction(): string }) => dailyDeleted.push(trigger.getHandlerFunction()),
+  newTrigger: (handler: string) => ({ timeBased: () => ({ atHour: (hour: number) => ({ everyDays: (days: number) => ({ create: () => dailyCreated.push(`${handler}:${hour}:${days}`) }) }) }) })
+};
+fn<() => unknown>("setupDailyFounderSummaryTrigger")();
+assert.deepEqual(dailyDeleted, ["sendDailyFounderAdmissionsSummary", "sendDailyFounderAdmissionsSummary"]);
+assert.deepEqual(dailyCreated, ["sendDailyFounderAdmissionsSummary:8:1"]);
+assert.doesNotMatch(source.slice(source.indexOf("function sendDailyFounderAdmissionsSummary"), source.indexOf("function setupDailyFounderSummaryTrigger")), /sendSubmitterAcknowledgement_|WhatsApp/);
+assert.doesNotMatch(source.slice(source.indexOf("function refreshAdmissionsReports"), source.indexOf("function refreshAdmissionsActionQueue")), /source\.sheet\.(?:set|clear|delete|append)/);
 
 console.log("Admissions operations pure helper, email, queue, and compatibility tests passed");

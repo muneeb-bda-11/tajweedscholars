@@ -34,6 +34,7 @@ Never place property values, deployment URLs, passwords, lead data, or API secre
 8. Select and run `setupPhase1Admissions()` once.
 9. Review and approve only the requested Spreadsheet, Gmail send/read-alias, properties, locking, and trigger permissions.
 10. Run `verifyPhase1AdmissionsSetup()`. Confirm the Trial Leads sheet, attribution columns, nine operational columns, appended `Submitted At PKT` display column, activity log, and exactly one notification trigger are reported ready. The diagnostic contains no lead data or secrets.
+11. Run `refreshAdmissionsReports()` to create or refresh `Admissions Action Queue`, `Marketing Performance`, and `Admissions Data Quality`. This reads `Trial Leads` in one batch and replaces only the three derived sheets.
 
 `setupPhase1Admissions()` is idempotent. It appends missing operational headers and the `Submitted At PKT` display column, configures the spreadsheet business time zone, creates the activity sheet and headers if absent, and replaces notification triggers with exactly one one-minute `processPendingLeadNotifications` trigger. It does not process leads itself and never deletes or moves existing business columns or rows. Run `backfillSubmittedAtPktDisplay()` manually once to populate only blank PKT display cells from canonical UTC values.
 
@@ -70,6 +71,28 @@ Do this before running either setup function after deploying the canonical queue
 
 Automated repository tests do not call Google, write a Sheet, or send email.
 
+## Admissions reports
+
+`refreshAdmissionsReports()` is the recommended manual refresh. It safely reruns, resolves source columns by header name, reuses each derived sheet instead of creating duplicates, and never edits a source lead row. The three convenience functions `refreshAdmissionsActionQueue()`, `refreshMarketingPerformance()`, and `refreshAdmissionsDataQuality()` return the matching result; each performs the same full, consistent report refresh.
+
+The action queue uses only the existing `Lead Status` and `Follow-up Due` fields, in this priority order: overdue, due today, due in the next three calendar days, `New`, then `Trial 1 Completed`/`Trial 2 Completed`/`Trial 3 Completed`. `Enrolled` and `Not Proceeding` are terminal. The current source does not contain separate Program, Trial Status, Last Contact Date, or approved No Response fields, so the queue does not infer them. `Main Goal` and `Age Group` are shown under their real names.
+
+Marketing rows are grouped by stored UTM source, medium, and campaign. Blank report dimensions display as `Direct / Unknown`; the source sheet remains blank. Contacted means any recognized status after `New`. Trials booked includes `Trial 1 Booked` and later trial/enrollment states. Trials attended includes completed-trial and `Enrolled` states. Paid enrollment means `Enrolled`. Lead-to-trial is booked divided by total leads; trial-to-paid is enrolled divided by attended. Both return zero for a zero denominator. No revenue or ROI is calculated.
+
+The data-quality sheet reports warnings only. It checks contact gaps, invalid/incomplete follow-up dates, unknown statuses, missing operational values, attribution lengths, paths, and first-touch timestamps. Duplicate submission IDs are checked if a `Submission ID` header exists. The current production schema does not store that ID in rows, so the report explicitly records that historical duplicate scanning is unavailable; webhook duplicate protection in Script Properties is unchanged.
+
+## Optional daily founder summary
+
+`previewDailyFounderAdmissionsSummary()` is the non-production/manual test: it returns aggregate summary data and a plain-text preview without sending email, writing Sheets, or exposing individual lead details. It covers the preceding 24 hours, current overdue/today counts, `Trial 1 Booked` count, completed-trial leads awaiting decision, new-lead source/campaign totals, and warning count.
+
+To enable the founder-only email, manually run `setupDailyFounderSummaryTrigger()` once from the official Apps Script account. It removes duplicate summary triggers and creates one daily trigger at approximately 08:00 in the Apps Script project's configured time zone. It is deliberately not called by `setupPhase1Admissions()`. The sender uses the existing verified `REPLY_TO_EMAIL` alias, the recipient is only `FOUNDER_EMAIL`, and the daily date key prevents a second send for that business date. It never calls the prospect acknowledgement or WhatsApp functions.
+
+Run `removeDailyFounderSummaryTrigger()` to disable the optional summary. Removing the trigger does not alter leads or reports. The setup and removal functions are safe to rerun.
+
+## Permissions and safe testing
+
+The executing official account must own or have edit access to the configured spreadsheet, permission to create the three derived sheets, permission to manage Apps Script triggers, and Gmail permission to send from the verified alias. For a non-production test, point `SPREADSHEET_ID` at an approved copy, run `refreshAdmissionsReports()`, inspect the three derived sheets, then run `previewDailyFounderAdmissionsSummary()`. Do not run `sendDailyFounderAdmissionsSummary()` in a test project unless its `FOUNDER_EMAIL` is an approved internal test recipient.
+
 The website repository does not control Google Apps Script properties. Confirm
 `FOUNDER_EMAIL` and `REPLY_TO_EMAIL` in the deployed Apps Script project's
 **Project Settings → Script Properties** before publishing the revised script.
@@ -86,3 +109,4 @@ and `replyTo`.
 4. Do not delete operational columns, activity rows, trigger history, or lead data during rollback.
 5. Disable the `processPendingLeadNotifications` trigger if the old version cannot use it, and confirm no legacy `processNotificationQueue` trigger remains.
 6. Submit a designated test lead and verify the original response contract before reopening admissions.
+7. Run `removeDailyFounderSummaryTrigger()` before reverting if the prior script version does not contain the summary handler. The derived report sheets may be retained as snapshots or manually deleted after confirming they are not the source `Trial Leads` sheet; rollback never requires changing historical lead rows.
