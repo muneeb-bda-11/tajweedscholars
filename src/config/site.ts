@@ -246,11 +246,9 @@ export const PRICING_PLANS: PricingPlan[] = [
   },
   {
     id: "standard",
-    title: "Standard Plan",
+    title: "2-Day Plan",
     frequency: "2 days per week",
-    isPopular: true,
     features: [
-      "Recommended for most students",
       "Dedicated private teacher",
       "Live 1-to-1 classes through Zoom",
       "30-minute sessions",
@@ -261,9 +259,11 @@ export const PRICING_PLANS: PricingPlan[] = [
   },
   {
     id: "growth",
-    title: "Growth Plan",
+    title: "Standard Plan",
     frequency: "3 days per week",
+    isPopular: true,
     features: [
+      "Recommended for most students",
       "Dedicated private teacher",
       "Live 1-to-1 classes through Zoom",
       "30-minute sessions",
@@ -430,7 +430,7 @@ export const NAVIGATION_LINKS = {
 
 export const PRICING = {
   currencies: {
-    USD: { symbol: "$", rates: [40, 50, 60, 70, 80, 45, 55] },
+    USD: { symbol: "$", rates: [29, 39, 59, 59, 69, 39, 49] },
     GBP: { symbol: "£", rates: [30, 40, 45, 50, 60, 35, 45] },
     CAD: { symbol: "C$", rates: [55, 70, 85, 100, 115, 65, 80] },
     AUD: { symbol: "A$", rates: [60, 75, 90, 100, 115, 65, 80] }

@@ -18,7 +18,7 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
   "/hifz-program": { title: "Online Hifz Program | Tajweed Scholars", description: "A private Quran memorization pathway structured around Sabaq, Sabqi, Manzil, Tajweed, and regular revision." },
   "/arabic-language": { title: "Online Arabic Language Classes | Tajweed Scholars", description: "Arabic Language learning available following an admissions consultation." },
   "/islamic-studies": { title: "Online Islamic Studies Add-on | Tajweed Scholars", description: "Islamic Studies learning available as an add-on with eligible Tajweed Scholars Quran programs." },
-  "/pricing": { title: "Online Quran Class Pricing | Tajweed Scholars", description: "Monthly private Quran class plans start from $40, with one-to-five-day and weekend options." },
+  "/pricing": { title: "Online Quran Class Pricing | Tajweed Scholars", description: "Plans from $29 USD/month, with private one-to-five-day and weekend options." },
   "/free-trial": { title: "Book 3 Free Trial Classes | Tajweed Scholars", description: "Book three free private Quran trial classes. Trial 1 includes placement assessment and a real mini-lesson." },
   "/about": { title: "About Tajweed Scholars", description: "Learn about Tajweed Scholars, a private online Quran academy led by a founder with a complete verified Sanad." },
   "/why-choose-us": { title: "Why Choose Tajweed Scholars", description: "Verified Sanad/Ijazah teachers, private one-to-one learning, safeguarding standards, and regular progress updates." },

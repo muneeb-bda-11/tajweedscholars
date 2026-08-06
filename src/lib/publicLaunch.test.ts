@@ -16,7 +16,7 @@ const footer = read("../components/Footer.tsx");
 assert.doesNotMatch(contact, /ContactForm|success|DEMO_MODE|FORM_ENDPOINT/);
 assert.match(contact, /WhatsApp/); assert.match(contact, /Email/); assert.match(contact, /Book 3 Free Trial Classes/);
 assert.doesNotMatch(pricing + config, /SHOW_EXACT_PRICES|pricing-exact-toggle|Exact prices enabled|Interactive switch linked/);
-assert.match(pricing, /Plans from \$40\/month/); assert.match(pricing, /30-minute/); assert.match(pricing, /Zoom/);
+assert.match(pricing, /Plans from \$29 USD\/month/); assert.match(pricing, /30-minute/); assert.match(pricing, /Zoom/);
 
 const programRoutes = ["kids-quran-classes", "adult-quran-classes", "tajweed-course", "hifz-program", "arabic-language", "islamic-studies"];
 for (const route of programRoutes) assert.match(app, new RegExp(`<Route path="/${route}" element={<ProgramPage />} />`));

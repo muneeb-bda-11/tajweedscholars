@@ -47,7 +47,7 @@ export const Home: React.FC = () => {
         <div className="mx-auto grid max-w-7xl items-center gap-6 px-4 sm:px-6 lg:grid-cols-[1fr_auto] lg:px-8">
           <div>
             <p className="text-xs font-bold text-emerald-800">Flexible monthly plans</p>
-            <h2 id="pricing-teaser-title" className="mt-2 font-display text-3xl font-bold tracking-tight text-stone-800 sm:text-4xl">Plans from $40/month</h2>
+            <h2 id="pricing-teaser-title" className="mt-2 font-display text-3xl font-bold tracking-tight text-stone-800 sm:text-4xl">Plans from $29 USD/month</h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {["1–5 days per week", "Weekend-only options", "30-minute private classes", "Three free trial classes before enrollment"].map((item) => (
                 <span key={item} className="rounded-full border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-bold text-stone-600">{item}</span>
