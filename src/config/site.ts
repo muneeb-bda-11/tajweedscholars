@@ -430,7 +430,7 @@ export const NAVIGATION_LINKS = {
 
 export const PRICING = {
   currencies: {
-    USD: { symbol: "$", rates: [29, 39, 59, 59, 69, 39, 49] },
+    USD: { symbol: "$", rates: [29, 39, 49, 59, 69, 39, 49] },
     GBP: { symbol: "£", rates: [30, 40, 45, 50, 60, 35, 45] },
     CAD: { symbol: "C$", rates: [55, 70, 85, 100, 115, 65, 80] },
     AUD: { symbol: "A$", rates: [60, 75, 90, 100, 115, 65, 80] }
