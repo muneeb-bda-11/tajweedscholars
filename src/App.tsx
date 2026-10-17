@@ -5,6 +5,7 @@ import { Footer } from "./components/Footer";
 import { Home } from "./pages/Home";
 import { ProgramFinderProvider } from "./components/ProgramFinder";
 import { MobileTrialBar } from "./components/home/MobileTrialBar";
+import { FloatingWhatsApp } from "./components/FloatingWhatsApp";
 import { PageMetadata } from "./components/PageMetadata";
 import { RouteFallback } from "./components/RouteFallback";
 import { prefetchPriorityRoutesWhenIdle } from "./lib/routeModules";
@@ -44,4 +45,4 @@ function SiteContent({ children }: { children: React.ReactNode }) {
   return <Element id="app-main" className="flex-grow">{children}</Element>;
 }
 
-export default function App({ initialPath, initialRouteElement }: { initialPath?: string; initialRouteElement?: React.ReactNode } = {}) { return <RouterProvider initialPath={initialPath}><ProgramFinderProvider><div className="flex min-h-screen flex-col bg-stone-50 font-sans text-stone-850 antialiased selection:bg-emerald-800 selection:text-stone-50"><Header /><SiteContent><AppRoutes initialRouteElement={initialRouteElement} /></SiteContent><RouteFocusManager /><PageMetadata /><Footer /><MobileTrialBar /></div></ProgramFinderProvider></RouterProvider>; }
+export default function App({ initialPath, initialRouteElement }: { initialPath?: string; initialRouteElement?: React.ReactNode } = {}) { return <RouterProvider initialPath={initialPath}><ProgramFinderProvider><div className="flex min-h-screen flex-col bg-stone-50 font-sans text-stone-850 antialiased selection:bg-emerald-800 selection:text-stone-50"><Header /><SiteContent><AppRoutes initialRouteElement={initialRouteElement} /></SiteContent><RouteFocusManager /><PageMetadata /><Footer /><MobileTrialBar /><FloatingWhatsApp /></div></ProgramFinderProvider></RouterProvider>; }
