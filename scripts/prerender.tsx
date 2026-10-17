@@ -17,6 +17,8 @@ import { Resources } from "../src/pages/Resources";
 import { ResourceArticle } from "../src/pages/ResourceArticle";
 import { canonicalUrlFor, PAGE_METADATA, PUBLIC_ROUTES, SITE_NAME, SOCIAL_IMAGE_URL } from "../src/config/metadata";
 import { PUBLISHED_RESOURCES, publishedResourceForPath, resourceRoute } from "../src/content/resources";
+import { CountryPage } from "../src/pages/CountryPage";
+import { countryPageForPath } from "../src/content/countryPages";
 
 const projectRoot = process.cwd();
 const distRoot = path.join(projectRoot, "dist");
@@ -34,6 +36,7 @@ const componentFor = (route: string): ComponentType => {
   if (route === "/privacy-policy") return PrivacyPolicy;
   if (route === "/resources") return Resources;
   if (publishedResourceForPath(route)) return ResourceArticle;
+  if (countryPageForPath(route)) return CountryPage;
   return PolicyPage;
 };
 
