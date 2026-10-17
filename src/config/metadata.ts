@@ -33,6 +33,8 @@ export const PAGE_METADATA: Record<string, PageMetadata> = {
   "/complaints": { title: "Complaints Process | Tajweed Scholars", description: "How to raise a concern with Tajweed Scholars and how complaints are reviewed, resolved, and escalated." },
   "/acceptable-use": { title: "Acceptable Use Policy | Tajweed Scholars", description: "How to use Tajweed Scholars classes, official communication channels, and website respectfully and safely." },
   "/resources": { title: "Quran Learning Resources | Tajweed Scholars", description: "Practical, human-reviewed guidance for parents and adult learners considering private online Quran classes." },
+  "/online-quran-classes-in-usa": { title: "Online Quran Classes in the USA | Tajweed Scholars", description: "Live, private 1-to-1 online Quran classes for kids and adults across the USA. US-timezone scheduling, verified teachers, and 3 free trial classes." },
+  "/online-quran-classes-in-uk": { title: "Online Quran Classes in the UK | Tajweed Scholars", description: "Live, private 1-to-1 online Quran classes for kids and adults across the UK. After-school GMT/BST scheduling, verified teachers, and 3 free trial classes." },
   ...Object.fromEntries(PUBLISHED_RESOURCES.map((resource) => [resourceRoute(resource), { title: `${resource.title} | Tajweed Scholars`, description: resource.metaDescription }])),
 };
 
