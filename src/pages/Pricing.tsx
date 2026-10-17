@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { PRICING_PLANS, PRICING, siteEmails, siteMailto } from "../config/site";
+import { PRICING_PLANS, PRICING, SITE_CONFIG, siteEmails, siteMailto } from "../config/site";
 import { Icon } from "../components/Icon";
 import { Link } from "../lib/router";
 import { PRICING_FAQS } from "../config/pageContent";
@@ -25,6 +25,7 @@ export const Pricing: React.FC = () => {
           <fieldset className="mt-6"><legend className="text-sm font-bold">Weekly frequency</legend><div className="mt-3 grid gap-2 sm:grid-cols-5">{PRICING_PLANS.slice(0,5).map((plan, index) => <button type="button" key={plan.id} onClick={() => setSelected(index)} aria-pressed={selected === index} className={`min-h-12 rounded-lg border px-2 text-sm font-bold ${selected === index ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-stone-200"}`}>{index + 1} day{index ? "s" : ""}</button>)}</div></fieldset>
           <div className="mt-6 rounded-xl bg-emerald-50 p-5"><p className="text-sm font-bold text-emerald-800">{PRICING_PLANS[selected].title}</p><p className="mt-1 text-3xl font-bold">{money.symbol}{money.rates[selected]} <span className="text-sm font-normal text-stone-600">{currency}/month</span></p><p className="mt-2 text-sm text-stone-600">{PRICING_PLANS[selected].frequency} · private 30-minute Zoom classes</p>{selected === 0 && <p className="mt-2 text-sm text-stone-600">A lighter weekly option for learners who need a limited schedule.</p>}</div>
         </div>
+        <p className="mx-auto mt-4 max-w-3xl text-center text-sm text-stone-600"><Icon name="Clock" size={14} className="mr-1 inline-block text-emerald-800" />{SITE_CONFIG.timeZoneInfo} We currently teach students across {SITE_CONFIG.countriesServed.join(", ")}.</p>
         <section className="mx-auto mt-10 max-w-4xl"><h2 className="text-center text-2xl font-bold">What every plan includes</h2><ul className="mt-5 grid gap-3 sm:grid-cols-2">{PRICING_PLANS[0].features.map((feature) => <li key={feature} className="flex gap-2 rounded-lg border border-stone-200 bg-white p-4 text-sm"><Icon name="Check" size={16} className="shrink-0 text-emerald-800"/>{feature}</li>)}</ul></section>
         <section className="mx-auto mt-10 max-w-4xl"><h2 className="text-2xl font-bold">Weekend options</h2><div className="mt-4 grid gap-4 sm:grid-cols-2">{PRICING_PLANS.slice(5).map((plan, i) => <article key={plan.id} className="rounded-xl border border-stone-200 bg-white p-5"><h3 className="font-bold">{plan.title}</h3><p className="mt-1 text-sm text-stone-600">{plan.frequency}</p><p className="mt-4 text-2xl font-bold">{money.symbol}{money.rates[i+5]} <span className="text-sm font-normal">{currency}/month</span></p></article>)}</div></section>
 
