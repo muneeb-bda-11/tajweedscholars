@@ -23,6 +23,7 @@ const PolicyPage = lazy(() => import("./pages/PolicyPage").then(m => ({ default:
 const NotFoundRoute = lazy(() => import("./pages/NotFound").then(m => ({ default: m.NotFoundRoute })));
 const Resources = lazy(() => import("./pages/Resources").then(m => ({ default: m.Resources })));
 const ResourceArticle = lazy(() => import("./pages/ResourceArticle").then(m => ({ default: m.ResourceArticle })));
+const CountryPage = lazy(() => import("./pages/CountryPage").then(m => ({ default: m.CountryPage })));
 
 function AppRoutes({ initialRouteElement }: { initialRouteElement?: React.ReactNode }) {
   const [prerenderedElement, setPrerenderedElement] = useState(initialRouteElement);
@@ -35,6 +36,7 @@ function AppRoutes({ initialRouteElement }: { initialRouteElement?: React.ReactN
     <Route path="/about" element={<About />} /><Route path="/why-choose-us" element={<WhyChooseUs />} /><Route path="/privacy-policy" element={<PrivacyPolicy />} />
     <Route path="/terms-and-conditions" element={<PolicyPage />} /><Route path="/payment-policy" element={<PolicyPage />} /><Route path="/refund-policy" element={<PolicyPage />} /><Route path="/reschedule-policy" element={<PolicyPage />} /><Route path="/child-safeguarding" element={<PolicyPage />} /><Route path="/recording-policy" element={<PolicyPage />} /><Route path="/complaints" element={<PolicyPage />} /><Route path="/acceptable-use" element={<PolicyPage />} />
     <Route path="/resources" element={<Resources />} />{PUBLISHED_RESOURCES.map(resource => <Route key={resource.slug} path={resourceRoute(resource)} element={<ResourceArticle resourcePath={resourceRoute(resource)} />} />)}
+    <Route path="/online-quran-classes-in-usa" element={<CountryPage />} /><Route path="/online-quran-classes-in-uk" element={<CountryPage />} />
     <NotFoundRoute />
   </Suspense>;
 }
