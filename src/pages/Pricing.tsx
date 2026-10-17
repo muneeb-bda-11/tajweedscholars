@@ -16,7 +16,7 @@ export const Pricing: React.FC = () => {
       <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-bold text-emerald-800">Tuition and schedules</p>
-          <h1 className="mt-3 font-display text-4xl font-bold text-stone-950 md:text-5xl">Plans from $29 USD/month</h1>
+          <h1 className="mt-3 font-display text-4xl font-bold text-stone-950 md:text-5xl">Plans from {money.symbol}{money.rates[0]} {currency}/month</h1>
           <p className="mt-5 leading-7 text-stone-600">Every regular class is a live, private 30-minute lesson on Zoom. Choose one to five days per week or a weekend schedule after your three free trial classes.</p>
         </div>
 
