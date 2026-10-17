@@ -4,8 +4,8 @@ import { PAGE_METADATA, PUBLIC_ROUTES, canonicalUrlFor } from "../config/metadat
 import { DRAFT_RESOURCES, PUBLISHED_RESOURCES, RESOURCE_RECORDS, publishedResourceForPath, resourceRoute } from "../content/resources";
 
 assert.equal(RESOURCE_RECORDS.length, 5);
-assert.equal(PUBLISHED_RESOURCES.length, 1);
-assert.equal(DRAFT_RESOURCES.length, 4);
+assert.equal(PUBLISHED_RESOURCES.length, 5);
+assert.equal(DRAFT_RESOURCES.length, 0);
 assert.equal(PUBLIC_ROUTES.length, Object.keys(PAGE_METADATA).length, "public routes are derived from published metadata");
 assert.equal(new Set(RESOURCE_RECORDS.map(({ slug }) => slug)).size, RESOURCE_RECORDS.length, "resource slugs are unique");
 
