@@ -293,7 +293,7 @@ export const RESOURCE_RECORDS: ResourceRecord[] = [
         paragraphs: [
           "Thirty minutes is short on purpose. It fits before work, after the children are in bed, or in a quiet gap in the day, and it is long enough for real progress when the teaching is one-to-one. Most adult learners take two or three classes a week, though one is a perfectly respectable start. Consistency matters far more than long sessions.",
           "Classes take place live on Zoom, so a quiet room, a stable internet connection, and your full attention are the only equipment you need. Choose a regular weekly slot and protect it the way you would any appointment. Between classes, even ten minutes of daily revision, reading aloud what you covered, will move you forward faster than a single long weekend session.",
-          "Progress with steady practice is exactly that: steady. Some weeks a letter finally clicks. Some weeks feel flat. Both are normal, and your teacher will keep a clear record of where you are so that no lesson ever starts from scratch. Plans begin at $29 per month, and your teacher and the admissions team will help you choose a frequency that fits your life, not the other way around.",
+          "Progress with steady practice is exactly that: steady. Some weeks a letter finally clicks. Some weeks feel flat. Both are normal, and your teacher will keep a clear record of where you are so that no lesson ever starts from scratch. You can see the current plans on our pricing page, and your teacher and the admissions team will help you choose a frequency that fits your life, not the other way around.",
         ],
         links: [
           { label: "View pricing plans", route: "/pricing" },
@@ -410,4 +410,18 @@ export const RESOURCE_RECORDS: ResourceRecord[] = [
 export const PUBLISHED_RESOURCES = RESOURCE_RECORDS.filter((resource): resource is PublishedResource => !resource.draft);
 export const DRAFT_RESOURCES = RESOURCE_RECORDS.filter((resource): resource is DraftResource => resource.draft);
 export const resourceRoute = (resource: Pick<ResourceRecord, "slug">) => `/resources/${resource.slug}`;
+
+export const resourceFaqPairs = (resource: PublishedResource): Array<readonly [question: string, answer: string]> => {
+  const section = resource.sections.find((candidate) => candidate.heading === "Frequently asked questions");
+  if (!section) return [];
+  const pairs: Array<readonly [string, string]> = [];
+  for (let index = 0; index + 1 < section.paragraphs.length; index += 2) {
+    const question = section.paragraphs[index];
+    const answer = section.paragraphs[index + 1];
+    if (question.startsWith("Q: ") && answer.startsWith("A: ")) {
+      pairs.push([question.slice(3), answer.slice(3)] as const);
+    }
+  }
+  return pairs;
+};
 export const publishedResourceForPath = (path: string) => PUBLISHED_RESOURCES.find((resource) => resourceRoute(resource) === path);
