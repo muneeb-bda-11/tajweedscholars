@@ -16,9 +16,11 @@ import { PolicyPage } from "../src/pages/PolicyPage";
 import { Resources } from "../src/pages/Resources";
 import { ResourceArticle } from "../src/pages/ResourceArticle";
 import { canonicalUrlFor, PAGE_METADATA, PUBLIC_ROUTES, SITE_NAME, SOCIAL_IMAGE_URL } from "../src/config/metadata";
-import { PUBLISHED_RESOURCES, publishedResourceForPath, resourceRoute } from "../src/content/resources";
+import { PUBLISHED_RESOURCES, publishedResourceForPath, resourceFaqPairs, resourceRoute } from "../src/content/resources";
 import { CountryPage } from "../src/pages/CountryPage";
 import { countryPageForPath } from "../src/content/countryPages";
+import { PROGRAMS } from "../src/config/site";
+import { PROGRAM_FAQS } from "../src/config/pageContent";
 
 const projectRoot = process.cwd();
 const distRoot = path.join(projectRoot, "dist");
@@ -73,35 +75,96 @@ const homeStructuredData = {
   ],
 };
 
-const headFor = (route: string) => {
+const faqPageStructuredData = (faqs: ReadonlyArray<readonly [string, string]>) => ({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map(([question, answer]) => ({
+    "@type": "Question",
+    name: question,
+    acceptedAnswer: { "@type": "Answer", text: answer },
+  })),
+});
+
+const structuredDataFor = (route: string): unknown[] => {
+  if (route === "/") return [homeStructuredData];
   const metadata = PAGE_METADATA[route];
   const canonical = canonicalUrlFor(route);
   const resource = publishedResourceForPath(route);
-  const resourceStructuredData = resource ? [
-    {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      headline: resource.title,
-      description: resource.metaDescription,
-      mainEntityOfPage: canonical,
-      datePublished: resource.publishedDate,
-      dateModified: resource.updatedDate,
-      author: { "@type": "Organization", name: resource.authorName },
-      publisher: { "@type": "Organization", name: SITE_NAME, url: canonicalUrlFor("/") },
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: canonicalUrlFor("/") },
-        { "@type": "ListItem", position: 2, name: "Resources", item: canonicalUrlFor("/resources") },
-        { "@type": "ListItem", position: 3, name: resource.title, item: canonical },
-      ],
-    },
-  ] : [];
-  const jsonLd = route === "/"
-    ? `\n    <script type="application/ld+json">${JSON.stringify(homeStructuredData).replaceAll("<", "\\u003c")}</script>`
-    : resourceStructuredData.map((data) => `\n    <script type="application/ld+json">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script>`).join("");
+  if (resource) {
+    const blocks: unknown[] = [
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: resource.title,
+        description: resource.metaDescription,
+        mainEntityOfPage: canonical,
+        datePublished: resource.publishedDate,
+        dateModified: resource.updatedDate,
+        author: { "@type": "Organization", name: resource.authorName },
+        publisher: { "@type": "Organization", name: SITE_NAME, url: canonicalUrlFor("/") },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: canonicalUrlFor("/") },
+          { "@type": "ListItem", position: 2, name: "Resources", item: canonicalUrlFor("/resources") },
+          { "@type": "ListItem", position: 3, name: resource.title, item: canonical },
+        ],
+      },
+    ];
+    const faqs = resourceFaqPairs(resource);
+    if (faqs.length > 0) blocks.push(faqPageStructuredData(faqs));
+    return blocks;
+  }
+  const program = PROGRAMS.find((item) => item.path === route);
+  if (program) {
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "Course",
+        name: metadata.title,
+        description: metadata.description,
+        provider: {
+          "@type": "Organization",
+          "@id": `${canonicalUrlFor("/")}#organization`,
+          name: SITE_NAME,
+          url: canonicalUrlFor("/"),
+        },
+        hasCourseInstance: { "@type": "CourseInstance", courseMode: "Online" },
+      },
+      faqPageStructuredData(PROGRAM_FAQS[program.id]),
+    ];
+  }
+  const country = countryPageForPath(route);
+  if (country) {
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: metadata.title,
+        description: metadata.description,
+        url: canonical,
+        isPartOf: { "@id": `${canonicalUrlFor("/")}#website` },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: canonicalUrlFor("/") },
+          { "@type": "ListItem", position: 2, name: country.title, item: canonical },
+        ],
+      },
+      faqPageStructuredData(country.faqs),
+    ];
+  }
+  return [];
+};
+
+const headFor = (route: string) => {
+  const metadata = PAGE_METADATA[route];
+  const canonical = canonicalUrlFor(route);
+  const jsonLd = structuredDataFor(route).map((data) => `\n    <script type="application/ld+json">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script>`).join("");
   return `
     <title>${escapeAttribute(metadata.title)}</title>
     <meta name="description" content="${escapeAttribute(metadata.description)}" />

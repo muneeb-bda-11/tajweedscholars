@@ -4,7 +4,10 @@ import path from "node:path";
 import { canonicalUrlFor, PAGE_METADATA, PUBLIC_ROUTES, SITE_NAME, SOCIAL_IMAGE_URL } from "../src/config/metadata";
 import { inspectRouteHtml } from "./html-validation";
 import { BRAND_ASSETS, jsonLdEntities, validateBrandAssets } from "./brand-validation";
-import { DRAFT_RESOURCES, PUBLISHED_RESOURCES, resourceRoute } from "../src/content/resources";
+import { DRAFT_RESOURCES, PUBLISHED_RESOURCES, publishedResourceForPath, resourceFaqPairs, resourceRoute } from "../src/content/resources";
+import { PROGRAMS } from "../src/config/site";
+import { PROGRAM_FAQS } from "../src/config/pageContent";
+import { countryPageForPath } from "../src/content/countryPages";
 
 const distRoot = path.join(process.cwd(), "dist");
 const internalLinks = new Set(PUBLIC_ROUTES);
@@ -54,6 +57,37 @@ for (const route of PUBLIC_ROUTES) {
     assert.match(html, /<nav\s+aria-label="Breadcrumb"/, `${route}: structured breadcrumbs are visible`);
     assert.match(html, /By\s+<strong[^>]*>[^<]+<\/strong>/, `${route}: visible author`);
     assert.match(html, /Updated\s+<time/, `${route}: visible updated date`);
+  }
+  const structuredBlocks = [...html.matchAll(/<script\s+type="application\/ld\+json">([\s\S]*?)<\/script>/gi)].map((script) => JSON.parse(script[1]) as { "@type"?: string; name?: string; mainEntity?: Array<{ name?: string }> });
+  const countType = (type: string) => structuredBlocks.filter((data) => data["@type"] === type).length;
+  const resource = publishedResourceForPath(route);
+  if (resource) {
+    const pairs = resourceFaqPairs(resource);
+    assert.equal(countType("FAQPage"), pairs.length > 0 ? 1 : 0, `${route}: FAQPage present exactly when the article renders an FAQ section`);
+    if (pairs.length > 0) {
+      const faq = structuredBlocks.find((data) => data["@type"] === "FAQPage");
+      assert.deepEqual(faq?.mainEntity?.map((entity) => entity.name), pairs.map(([question]) => question), `${route}: FAQPage questions match the visible FAQ section`);
+      for (const [question] of pairs) assert.ok(html.includes(question), `${route}: FAQ question is visible: ${question}`);
+    }
+  }
+  const program = PROGRAMS.find((item) => item.path === route);
+  if (program) {
+    assert.equal(countType("Course"), 1, `${route}: one Course structured-data record`);
+    assert.equal(countType("FAQPage"), 1, `${route}: one FAQPage structured-data record`);
+    const course = structuredBlocks.find((data) => data["@type"] === "Course");
+    assert.equal(course?.name, PAGE_METADATA[route].title, `${route}: Course name matches the page metadata title`);
+    const faq = structuredBlocks.find((data) => data["@type"] === "FAQPage");
+    assert.deepEqual(faq?.mainEntity?.map((entity) => entity.name), PROGRAM_FAQS[program.id].map(([question]) => question), `${route}: FAQPage questions match the visible FAQs`);
+    for (const [question] of PROGRAM_FAQS[program.id]) assert.ok(html.includes(question), `${route}: FAQ question is visible: ${question}`);
+  }
+  const country = countryPageForPath(route);
+  if (country) {
+    assert.equal(countType("WebPage"), 1, `${route}: one WebPage structured-data record`);
+    assert.equal(countType("BreadcrumbList"), 1, `${route}: one BreadcrumbList structured-data record`);
+    assert.equal(countType("FAQPage"), 1, `${route}: one FAQPage structured-data record`);
+    const faq = structuredBlocks.find((data) => data["@type"] === "FAQPage");
+    assert.deepEqual(faq?.mainEntity?.map((entity) => entity.name), country.faqs.map(([question]) => question), `${route}: FAQPage questions match the visible FAQs`);
+    for (const [question] of country.faqs) assert.ok(html.includes(question), `${route}: FAQ question is visible: ${question}`);
   }
   for (const link of html.matchAll(/<a\b[^>]*href="(\/[^"]*)"/gi)) {
     const pathname = link[1].split(/[?#]/)[0];
