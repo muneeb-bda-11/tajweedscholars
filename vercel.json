@@ -1,5 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "trailingSlash": false,
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "destination": "/resources/sabaq-sabqi-and-manzil-a-parents-guide",
+      "permanent": true,
+      "source": "/sabaq-sabqi-manzil-for-kids"
+    },
+    {
+      "destination": "/resources/sabaq-sabqi-and-manzil-a-parents-guide",
+      "permanent": true,
+      "source": "/sabaq-sabqi-manzil-for-kids/"
+    }
+  ],
+  "trailingSlash": false
 }
