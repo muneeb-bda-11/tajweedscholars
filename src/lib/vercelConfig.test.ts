@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { PUBLIC_ROUTES } from "../config/metadata";
 
 interface VercelConfig {
   $schema: string;
@@ -7,7 +8,7 @@ interface VercelConfig {
   cleanUrls: boolean;
   rewrites?: unknown;
   routes?: unknown;
-  redirects?: unknown;
+  redirects?: Array<{ source: string; destination: string; permanent?: boolean }>;
 }
 
 const config = JSON.parse(
@@ -17,7 +18,18 @@ const config = JSON.parse(
 assert.equal(config.$schema, "https://openapi.vercel.sh/vercel.json");
 assert.equal(config.routes, undefined, "legacy routes must not override filesystem/API handling");
 assert.equal(config.rewrites, undefined, "public routes must resolve to generated filesystem HTML");
-assert.equal(config.redirects, undefined, "trailing-slash normalization uses Vercel's canonical redirect without catch-all redirects");
+// Redirects are allowed ONLY as exact legacy-URL 301s to real public routes (digest #60:
+// a changed URL needs a proper 301). No wildcards, parameters, or catch-alls.
+if (config.redirects !== undefined) {
+  assert.ok(Array.isArray(config.redirects), "redirects must be a list of exact legacy-URL entries");
+  for (const redirect of config.redirects) {
+    assert.equal(typeof redirect.source, "string", "redirect source must be a path");
+    assert.match(redirect.source, /^\//, "redirect source must be an absolute path");
+    assert.doesNotMatch(redirect.source, /[*():?+\[\]]/, "redirect source must be an exact path, not a pattern");
+    assert.equal(redirect.permanent, true, "legacy redirects must be permanent (301)");
+    assert.ok(PUBLIC_ROUTES.includes(redirect.destination), `redirect destination must be a public route: ${redirect.destination}`);
+  }
+}
 assert.equal(config.cleanUrls, true, "generated HTML is served through extensionless public URLs");
 assert.equal(config.trailingSlash, false, "trailing-slash variants redirect to canonical non-trailing URLs");
 for (const route of ["/programs/", "/pricing/", "/free-trial/"]) {
